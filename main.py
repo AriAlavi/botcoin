@@ -27,8 +27,6 @@ class DataPoint:
     def __repr__(self):
         return str(self)
 
-# test
-
 def readFile(filename):
     assert isinstance(filename, str)
     file = open(filename)
