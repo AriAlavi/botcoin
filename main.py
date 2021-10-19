@@ -46,12 +46,16 @@ def fetchData(data, givenDate, givenWindow):
     assert isinstance(givenDate, datetime)
     assert isinstance(givenWindow, timedelta)
     FETCHED_DATA = []
-
+    
+    endDate = givenDate.total_seconds() + givenWindow.total_seconds()
+    
+    for transaction in data:
+        if  givenDate <= transaction.time <= endDate:
+            FETCHED_DATA.append(transaction)
+        if transaction.time == endDate:
+            break
 
     return FETCHED_DATA
-
-
-
 
 def main():
     data = readFile(FILENAME)
@@ -62,10 +66,5 @@ def main():
     print(fetchData(data, randomDate, timedelta(minutes=1)))
     print(fetchData(data, randomDate, timedelta(days=1)))
     
-
-
-
-
-
 if __name__ == "__main__":
     main()
