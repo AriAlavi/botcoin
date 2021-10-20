@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime, timedelta
+from os import sep
 
 FILENAME = "XMRUSD.csv"
 
@@ -48,6 +49,12 @@ def fetchData(data, givenDate, givenWindow):
     assert isinstance(givenWindow, timedelta)
     FETCHED_DATA = []
 
+    endDate = givenDate + givenWindow
+    for i in data:
+        if timestampToDatetime(i.time) >= givenDate and timestampToDatetime(i.time) <= endDate:
+            FETCHED_DATA.append(i)
+        elif timestampToDatetime(i.time) > endDate:
+            break 
     # 1. ITERATE THROUGH ALL THE DATA
     # 2. COMPUTE THE END DATE (timedelta + datetime = datetime)
     # 3. CHECK IF THE ITEREATED DATE IS GREATER THAN OR EQUAL TO THE GIVEN DATE AND IF THE ITEREATED DATE IS LESS THAN OR EQUAL TO THE END DATE
@@ -64,10 +71,12 @@ def main():
     data = readFile(FILENAME)
     randomDate = datetime(year=2020, month=4, day=20, hour=5, minute=10, second=35)
 
-    print(fetchData(data, randomDate, timedelta(hours=3)))
-    print(fetchData(data, randomDate, timedelta(hours=1)))
-    print(fetchData(data, randomDate, timedelta(minutes=1)))
-    print(fetchData(data, randomDate, timedelta(days=1)))
+    #print(fetchData(data, randomDate, timedelta(hours=3)))
+    a = fetchData(data, randomDate, timedelta(hours=3))
+    for k in a:
+        print(k,sep="\n")
+    #print(fetchData(data, randomDate, timedelta(minutes=1)))
+    #print(fetchData(data, randomDate, timedelta(days=1)))
     
 
 
