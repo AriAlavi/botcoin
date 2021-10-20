@@ -46,17 +46,16 @@ def fetchData(data, givenDate, givenWindow):
     assert isinstance(givenWindow, timedelta)
     FETCHED_DATA = []
 
-    # 1. ITERATE THROUGH ALL THE DATA
-    # 2. COMPUTE THE END DATE (timedelta + datetime = datetime)
-    # 3. CHECK IF THE ITEREATED DATE IS GREATER THAN OR EQUAL TO THE GIVEN DATE AND IF THE ITEREATED DATE IS LESS THAN OR EQUAL TO THE END DATE
-    # 4. IF IT IS WITHIN THE REQUESTED RANGE, APPEND IT TO FETCHED DATA
-    # (optimize) 5. IF THE PREVIOUS ITEM WAS APPENDED, BUT THE CURRENT WAS NOT APPENDED, BREAK FROM THE LOOP
+    endDate = givenDate.total_seconds() + givenWindow.total_seconds()
+    
+    for transaction in data:
+        if  givenDate <= transaction.time <= endDate:
+            FETCHED_DATA.append(transaction)
+        if transaction.time == endDate:
+            break
 
 
     return FETCHED_DATA
-
-
-
 
 def main():
     data = readFile(FILENAME)
@@ -67,10 +66,5 @@ def main():
     print(fetchData(data, randomDate, timedelta(minutes=1)))
     print(fetchData(data, randomDate, timedelta(days=1)))
     
-
-
-
-
-
 if __name__ == "__main__":
     main()
