@@ -27,7 +27,6 @@ class DataPoint:
     def __repr__(self):
         return str(self)
 
-
 def readFile(filename):
     assert isinstance(filename, str)
     file = open(filename)
@@ -46,7 +45,7 @@ def fetchData(data, givenDate, givenWindow):
     assert isinstance(givenDate, datetime)
     assert isinstance(givenWindow, timedelta)
     FETCHED_DATA = []
-    
+
     endDate = givenDate.total_seconds() + givenWindow.total_seconds()
     
     for transaction in data:
@@ -54,6 +53,7 @@ def fetchData(data, givenDate, givenWindow):
             FETCHED_DATA.append(transaction)
         if transaction.time == endDate:
             break
+
 
     return FETCHED_DATA
 
