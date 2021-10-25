@@ -29,6 +29,7 @@ class DataPoint:
 class BotCoin:
     def __init__(self, filename):
         self.filename = filename
+        self.data = self.readFile()
 
     def readFile(self):
         assert isinstance(self.filename, str)
@@ -43,15 +44,14 @@ class BotCoin:
         print("File {} loaded!".format(self.filename))
         return DATA_COLLECTION
     
-    def fetchData(self, data, givenDate, givenWindow):
-        assert isinstance(data, list)
+    def fetchData(self, givenDate, givenWindow):
         assert isinstance(givenDate, datetime)
         assert isinstance(givenWindow, timedelta)
         FETCHED_DATA = []
 
         endDate = givenDate + givenWindow
         
-        for transaction in data:
+        for transaction in self.data:
             if  givenDate <= datetime.fromtimestamp(transaction.time) <= endDate:
                 FETCHED_DATA.append(transaction)
             if transaction.time == endDate:
@@ -63,11 +63,10 @@ def main():
     filename = "XMRUSD.csv"
     botcoin = BotCoin(filename)
     randomDate = datetime(year=2017, month=4, day=20, hour=6, minute=9, second=6)
-    data = botcoin.readFile() #maybe data can be a member variable of botcoin so all we need to call is fetchdate, so fetchdata calls readfile
-    print(botcoin.fetchData(data, randomDate, timedelta(hours=3)))
-    print(botcoin.fetchData(data, randomDate, timedelta(hours=1)))
-    print(botcoin.fetchData(data, randomDate, timedelta(minutes=1)))
-    print(botcoin.fetchData(data, randomDate, timedelta(days=1)))
+    print(botcoin.fetchData(randomDate, timedelta(hours=3)))
+    print(botcoin.fetchData(randomDate, timedelta(hours=1)))
+    print(botcoin.fetchData(randomDate, timedelta(minutes=1)))
+    print(botcoin.fetchData(randomDate, timedelta(days=1)))
     
     
     
