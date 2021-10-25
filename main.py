@@ -58,8 +58,6 @@ class BotCoin:
                 break
 
         return FETCHED_DATA
-    def printFetchData(self, data, givenDate, givenWindow):
-        print(self.fetchData(data, givenDate, givenWindow))
 
 def main():
     filename = "XMRUSD.csv"
@@ -67,10 +65,12 @@ def main():
     randomDate = datetime(year=2017, month=4, day=20, hour=6, minute=9, second=6)
     data = botcoin.readFile() #maybe data can be a member variable of botcoin so all we need to call is fetchdate, so fetchdata calls readfile
     print(botcoin.fetchData(data, randomDate, timedelta(hours=3)))
-    botcoin.printFetchData(data, randomDate, timedelta(hours=3))
-    botcoin.printFetchData(data, randomDate, timedelta(hours=1))
-    botcoin.printFetchData(data, randomDate, timedelta(minutes=1))
-    botcoin.printFetchData(data, randomDate, timedelta(days=1))
+    print(botcoin.fetchData(data, randomDate, timedelta(hours=1)))
+    print(botcoin.fetchData(data, randomDate, timedelta(minutes=1)))
+    print(botcoin.fetchData(data, randomDate, timedelta(days=1)))
+    
+    
+    
 
     
 if __name__ == "__main__":
