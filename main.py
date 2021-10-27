@@ -50,14 +50,46 @@ class BotCoin:
         FETCHED_DATA = []
 
         endDate = givenDate + givenWindow
+        endDateInt = int(endDate.timestamp())
+        print("end dateint:", endDateInt)
         
         for transaction in self.data:
             if  givenDate <= datetime.fromtimestamp(transaction.time) <= endDate:
                 FETCHED_DATA.append(transaction)
-            if transaction.time > endDate:
+            if transaction.time > endDateInt:
                 break
 
         return FETCHED_DATA
+
+class DiscreteData:
+    def __init__(self, rawData):
+        assert isinstance(rawData, list)
+        assert all(isinstance(x, DataPoint) for x in rawData)
+
+        self.price = None
+        self.deltaPrice = None
+        self.deltaDeltaPrice = None
+
+        self.volume = None
+        self.deltaVolume = None
+        self.deltaDeltaVolume = None
+
+        self.stdev = None
+        self.deltaStdev = None
+        self.deltaDeltaStdev = None
+
+        self.volumePerTransaction = None
+        self.minPrice = None
+        self.maxPrice = None
+
+        self.starTime = None
+        self.endTime = None
+
+        self.transactions = None
+
+
+
+
 
 def main():
     filename = "XMRUSD.csv"
