@@ -54,7 +54,7 @@ class BotCoin:
         for transaction in self.data:
             if  givenDate <= datetime.fromtimestamp(transaction.time) <= endDate:
                 FETCHED_DATA.append(transaction)
-            if transaction.time == endDate:
+            if transaction.time > endDate:
                 break
 
         return FETCHED_DATA
