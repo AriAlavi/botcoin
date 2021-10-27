@@ -51,7 +51,6 @@ class BotCoin:
 
         endDate = givenDate + givenWindow
         endDateInt = int(endDate.timestamp())
-        print("end dateint:", endDateInt)
         
         for transaction in self.data:
             if  givenDate <= datetime.fromtimestamp(transaction.time) <= endDate:
@@ -95,10 +94,13 @@ def main():
     filename = "XMRUSD.csv"
     botcoin = BotCoin(filename)
     randomDate = datetime(year=2017, month=4, day=20, hour=6, minute=9, second=6)
-    print(botcoin.fetchData(randomDate, timedelta(hours=3)))
-    print(botcoin.fetchData(randomDate, timedelta(hours=1)))
-    print(botcoin.fetchData(randomDate, timedelta(minutes=1)))
-    print(botcoin.fetchData(randomDate, timedelta(days=1)))
+    DiscreteData(botcoin.fetchData(randomDate, timedelta(hours=4)))
+    DiscreteData(botcoin.fetchData(randomDate, timedelta(days=1)))
+    DiscreteData(botcoin.fetchData(randomDate, timedelta(minutes=1)))
+    # print(botcoin.fetchData(randomDate, timedelta(hours=3)))
+    # print(botcoin.fetchData(randomDate, timedelta(hours=1)))
+    # print(botcoin.fetchData(randomDate, timedelta(minutes=1)))
+    # print(botcoin.fetchData(randomDate, timedelta(days=1)))
     
     
     
