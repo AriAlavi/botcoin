@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime, timedelta
+from statistics import median, mean, stdev
 
 class DataPoint:
     def __init__(self, time, price, quantity):
@@ -60,31 +61,64 @@ class BotCoin:
 
         return FETCHED_DATA
 
+def getDelta(givenList):
+    assert isinstance(givenList, list)
+    deltaList = []
+    if len(givenList) <= 1:
+        return deltaList
+    for i in range(1, len(givenList)):
+        delta = givenList[i] - givenList[i-1]
+        deltaList.append(delta)
+    return deltaList
+
+def safeMean(input):
+    assert isinstance(input, list)
+    if len(input) == 0:
+        return None
+    elif len(input) == 1:
+        return input[0]
+    else:
+        return mean(input)
+
+
 class DiscreteData:
     def __init__(self, rawData):
         assert isinstance(rawData, list)
         assert all(isinstance(x, DataPoint) for x in rawData)
 
-        self.price = None
-        self.deltaPrice = None
-        self.deltaDeltaPrice = None
+    
 
-        self.volume = None
-        self.deltaVolume = None
-        self.deltaDeltaVolume = None
+        self.safeMeanPrice = safeMean([x.price for x in rawData])
+        self.safeMeanDeltaPrice = safeMean(getDelta([x.price for x in rawData]))
+        self.safeMeanDeltaDeltaPrice = safeMean(getDelta(getDelta([x.price for x in rawData])))
 
-        self.stdev = None
-        self.deltaStdev = None
-        self.deltaDeltaStdev = None
+        self.volume = sum(x.quantity for x in rawData)
 
-        self.volumePerTransaction = None
-        self.minPrice = None
-        self.maxPrice = None
+        self.safeMeanVolumePerTransaction = safeMean([x.quantity for x in rawData])
+        self.safeMeanDeltaVolumePerTransaction = safeMean(getDelta([x.quantity for x in rawData]))
+        self.safeMeanDeltaDeltaVolumePerTransaction = safeMean(getDelta(getDelta([x.quantity for x in rawData])))
 
-        self.starTime = None
-        self.endTime = None
+        if len(rawData) < 2:
+            self.priceStdev = None
+            self.volumeStdev = None
+        else:
+            self.priceStdev = stdev(x.price for x in rawData)
+            self.volumeStdev = stdev(x.quantity for x in rawData)
 
-        self.transactions = None
+        if len(rawData) < 1:
+            self.minPrice = None
+            self.maxPrice = None
+
+            self.startTime = None
+            self.endTime = None
+        else:
+            self.minPrice = min(x.price for x in rawData)
+            self.maxPrice = max(x.price for x in rawData)
+
+            self.startTime = min(x.time for x in rawData)
+            self.endTime = max(x.time for x in rawData)
+
+        self.transactions = len(rawData)
 
 
 
@@ -97,6 +131,8 @@ def main():
     DiscreteData(botcoin.fetchData(randomDate, timedelta(hours=4)))
     DiscreteData(botcoin.fetchData(randomDate, timedelta(days=1)))
     DiscreteData(botcoin.fetchData(randomDate, timedelta(minutes=1)))
+    DiscreteData([DataPoint(1, float(1), float(1))])
+
     # print(botcoin.fetchData(randomDate, timedelta(hours=3)))
     # print(botcoin.fetchData(randomDate, timedelta(hours=1)))
     # print(botcoin.fetchData(randomDate, timedelta(minutes=1)))
