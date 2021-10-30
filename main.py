@@ -1,16 +1,6 @@
 import csv
 from datetime import datetime, timedelta
-from os import sep
-
-FILENAME = "XMRUSD.csv"
-
-def readUnix(givenTimestamp) -> str:
-    assert isinstance(givenTimestamp, int)
-    return str(datetime.fromtimestamp(givenTimestamp).strftime("%m/%d/%Y %H:%M"))
-
-def timestampToDatetime(givenTiemstamp) -> datetime:
-    assert isinstance(givenTiemstamp, int)
-    return datetime.fromtimestamp(givenTiemstamp)
+from statistics import median, mean, stdev
 
 class DataPoint:
     def __init__(self, time, price, quantity):
@@ -22,66 +12,139 @@ class DataPoint:
         self.quantity = quantity
         self.price = price
 
+    def readUnix(self,givenTimestamp) -> str:
+        assert isinstance(givenTimestamp, int)
+        return str(datetime.fromtimestamp(givenTimestamp).strftime("%m/%d/%Y %H:%M"))
+
+    def timestampToDatetime(self,givenTiemstamp) -> datetime:
+        assert isinstance(givenTiemstamp, int)
+        return datetime.fromtimestamp(givenTiemstamp)
+
     def __str__(self):
-        return "[{}] {} @ ${}".format(readUnix(self.time), self.quantity, self.price)
+        return "[{}] {} @ ${}".format(self.readUnix(self.time), self.quantity, self.price)
 
     def __repr__(self):
         return str(self)
 
-# test
 
-def readFile(filename):
-    assert isinstance(filename, str)
-    file = open(filename)
-    reader = csv.reader(file)
-    i = 0
-    DATA_COLLECTION = []
-    for row in reader:
-        DATA_COLLECTION.append(DataPoint(int(row[0]), float(row[1]), float(row[2])))
+class BotCoin:
+    def __init__(self, filename):
+        self.filename = filename
+        self.data = self.readFile()
 
-    file.close()
-    print("File {} loaded!".format(filename))
-    return DATA_COLLECTION
+    def readFile(self):
+        assert isinstance(self.filename, str)
+        file = open(self.filename)
+        reader = csv.reader(file)
+        i = 0
+        DATA_COLLECTION = []
+        for row in reader:
+            DATA_COLLECTION.append(DataPoint(int(row[0]), float(row[1]), float(row[2])))
+
+        file.close()
+        print("File {} loaded!".format(self.filename))
+        return DATA_COLLECTION
     
-def fetchData(data, givenDate, givenWindow):
-    assert isinstance(data, list)
-    assert isinstance(givenDate, datetime)
-    assert isinstance(givenWindow, timedelta)
-    FETCHED_DATA = []
+    def fetchData(self, givenDate, givenWindow):
+        assert isinstance(givenDate, datetime)
+        assert isinstance(givenWindow, timedelta)
+        FETCHED_DATA = []
 
-    endDate = givenDate + givenWindow
-    for i in data:
-        if timestampToDatetime(i.time) >= givenDate and timestampToDatetime(i.time) <= endDate:
-            FETCHED_DATA.append(i)
-        elif timestampToDatetime(i.time) > endDate:
-            break 
-    # 1. ITERATE THROUGH ALL THE DATA
-    # 2. COMPUTE THE END DATE (timedelta + datetime = datetime)
-    # 3. CHECK IF THE ITEREATED DATE IS GREATER THAN OR EQUAL TO THE GIVEN DATE AND IF THE ITEREATED DATE IS LESS THAN OR EQUAL TO THE END DATE
-    # 4. IF IT IS WITHIN THE REQUESTED RANGE, APPEND IT TO FETCHED DATA
-    # (optimize) 5. IF THE PREVIOUS ITEM WAS APPENDED, BUT THE CURRENT WAS NOT APPENDED, BREAK FROM THE LOOP
+        endDate = givenDate + givenWindow
+        endDateInt = int(endDate.timestamp())
+        
+        for transaction in self.data:
+            if  givenDate <= datetime.fromtimestamp(transaction.time) <= endDate:
+                FETCHED_DATA.append(transaction)
+            if transaction.time > endDateInt:
+                break
+
+        return FETCHED_DATA
+
+def getDelta(givenList):
+    assert isinstance(givenList, list)
+    deltaList = []
+    if len(givenList) <= 1:
+        return deltaList
+    for i in range(1, len(givenList)):
+        delta = givenList[i] - givenList[i-1]
+        deltaList.append(delta)
+    return deltaList
+
+def safeMean(input):
+    assert isinstance(input, list)
+    if len(input) == 0:
+        return None
+    elif len(input) == 1:
+        return input[0]
+    else:
+        return mean(input)
 
 
-    return FETCHED_DATA
+class DiscreteData:
+    def __init__(self, rawData):
+        assert isinstance(rawData, list)
+        assert all(isinstance(x, DataPoint) for x in rawData)
+
+    
+
+        self.safeMeanPrice = safeMean([x.price for x in rawData])
+        self.safeMeanDeltaPrice = safeMean(getDelta([x.price for x in rawData]))
+        self.safeMeanDeltaDeltaPrice = safeMean(getDelta(getDelta([x.price for x in rawData])))
+
+        self.volume = sum(x.quantity for x in rawData)
+
+        self.safeMeanVolumePerTransaction = safeMean([x.quantity for x in rawData])
+        self.safeMeanDeltaVolumePerTransaction = safeMean(getDelta([x.quantity for x in rawData]))
+        self.safeMeanDeltaDeltaVolumePerTransaction = safeMean(getDelta(getDelta([x.quantity for x in rawData])))
+
+        if len(rawData) < 2:
+            self.priceStdev = None
+            self.volumeStdev = None
+        else:
+            self.priceStdev = stdev(x.price for x in rawData)
+            self.volumeStdev = stdev(x.quantity for x in rawData)
+
+        if len(rawData) < 1:
+            self.minPrice = None
+            self.maxPrice = None
+
+            self.startTime = None
+            self.endTime = None
+        else:
+            self.minPrice = min(x.price for x in rawData)
+            self.maxPrice = max(x.price for x in rawData)
+
+            self.startTime = min(x.time for x in rawData)
+            self.endTime = max(x.time for x in rawData)
+
+        self.transactions = len(rawData)
+
 
 
 
 
 def main():
-    data = readFile(FILENAME)
-    randomDate = datetime(year=2020, month=4, day=20, hour=5, minute=10, second=35)
+    filename = "XMRUSD.csv"
+    botcoin = BotCoin(filename)
+    randomDate = datetime(year=2017, month=4, day=20, hour=6, minute=9, second=6)
+    DiscreteData(botcoin.fetchData(randomDate, timedelta(hours=4)))
+    DiscreteData(botcoin.fetchData(randomDate, timedelta(days=1)))
+    DiscreteData(botcoin.fetchData(randomDate, timedelta(minutes=1)))
+    DiscreteData([DataPoint(1, float(1), float(1))])
 
-    #print(fetchData(data, randomDate, timedelta(hours=3)))
-    a = fetchData(data, randomDate, timedelta(hours=3))
-    for k in a:
-        print(k,sep="\n")
-    #print(fetchData(data, randomDate, timedelta(minutes=1)))
-    #print(fetchData(data, randomDate, timedelta(days=1)))
+
     
 
+    # print(botcoin.fetchData(randomDate, timedelta(hours=3)))
+    # print(botcoin.fetchData(randomDate, timedelta(hours=1)))
+    # print(botcoin.fetchData(randomDate, timedelta(minutes=1)))
+    # print(botcoin.fetchData(randomDate, timedelta(days=1)))
+    
+    
+    
 
-
-
-
+    
 if __name__ == "__main__":
     main()
+    
