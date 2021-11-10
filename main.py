@@ -120,6 +120,36 @@ class DiscreteData:
 
         self.transactions = len(rawData)
 
+def convertData(rawData,givenDate,dateRange,givenWindow):
+    assert isinstance(rawData, list)
+    assert all(isinstance(x, DataPoint) for x in rawData)
+    assert isinstance(givenDate, datetime)
+    assert isinstance(dateRange,timedelta)
+    assert isinstance(givenWindow,timedelta)
+    
+    rawDataList = []
+    beginDate = givenDate
+    endDate = givenDate + givenWindow
+    endDateInt = int(endDate.timestamp())
+    
+    while endDate <= beginDate + dateRange:
+        sampleData = []
+        for transaction in rawData:
+            if  givenDate <= datetime.fromtimestamp(transaction.time) <= endDate:
+                sampleData.append(transaction)
+            if transaction.time > endDateInt:
+                continue
+        
+        rawData = list(set(rawData) - set(sampleData))
+        rawDataList.append(sampleData)
+        givenDate = endDate
+        endDate = endDate + givenWindow
+        
+    map_object = map(DiscreteData, rawDataList)
+    newDataList = list(map_object)
+    return newDataList
+
+
 
 
 
@@ -128,10 +158,14 @@ def main():
     filename = "XMRUSD.csv"
     botcoin = BotCoin(filename)
     randomDate = datetime(year=2017, month=4, day=20, hour=6, minute=9, second=6)
-    DiscreteData(botcoin.fetchData(randomDate, timedelta(hours=4)))
-    DiscreteData(botcoin.fetchData(randomDate, timedelta(days=1)))
-    DiscreteData(botcoin.fetchData(randomDate, timedelta(minutes=1)))
-    DiscreteData([DataPoint(1, float(1), float(1))])
+    dateRange = timedelta(minutes=1)
+    #convertedData = convertData(botcoin.fetchData(randomDate, dateRange), randomDate, dateRange, timedelta(seconds=1))
+    #print(len(convertedData))
+
+    #DiscreteData(botcoin.fetchData(randomDate, timedelta(hours=4)))
+    #DiscreteData(botcoin.fetchData(randomDate, timedelta(days=1)))
+    #DiscreteData(botcoin.fetchData(randomDate, timedelta(minutes=1)))
+    #DiscreteData([DataPoint(1, float(1), float(1))])
 
     # print(botcoin.fetchData(randomDate, timedelta(hours=3)))
     # print(botcoin.fetchData(randomDate, timedelta(hours=1)))
