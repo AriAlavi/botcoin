@@ -1,6 +1,8 @@
 import csv
 from datetime import datetime, timedelta
 from statistics import median, mean, stdev
+from multiprocessing import Pool
+import os
 
 class DataPoint:
     def __init__(self, time, price, quantity):
@@ -120,7 +122,7 @@ class DiscreteData:
 
         self.transactions = len(rawData)
 
-def convertData(rawData,givenDate,dateRange,givenWindow):
+def convertData(rawData,givenDate,dateRange,givenWindow,**kwargs):
     assert isinstance(rawData, list)
     assert all(isinstance(x, DataPoint) for x in rawData)
     assert isinstance(givenDate, datetime)
@@ -144,22 +146,31 @@ def convertData(rawData,givenDate,dateRange,givenWindow):
         rawDataList.append(sampleData)
         givenDate = endDate
         endDate = endDate + givenWindow
-        
-    map_object = map(DiscreteData, rawDataList)
+    
+    with Pool(kwargs["threads"]) as p:
+        map_object = p.map(DiscreteData, rawDataList)
     newDataList = list(map_object)
     return newDataList
 
 
 
-
+import time
 
 
 def main():
+    THREAD_COUNT = os.cpu_count()
+    print("I have {} threads".format(THREAD_COUNT))
     filename = "XMRUSD.csv"
     botcoin = BotCoin(filename)
     randomDate = datetime(year=2017, month=4, day=20, hour=6, minute=9, second=6)
     dateRange = timedelta(minutes=1)
-    #convertedData = convertData(botcoin.fetchData(randomDate, dateRange), randomDate, dateRange, timedelta(seconds=1))
+    beforeMulti = time.time()
+    convertedData = convertData(botcoin.fetchData(randomDate, dateRange), randomDate, dateRange, timedelta(seconds=1), threads=THREAD_COUNT)
+    print("Multi thread ran in {} seconds".format(time.time()-beforeMulti))
+
+    beforeNonMulti = time.time()
+    convertedData = convertData(botcoin.fetchData(randomDate, dateRange), randomDate, dateRange, timedelta(seconds=1), threads=1)
+    print("Single thread ran in {} seconds".format(time.time()-beforeMulti))
     #print(len(convertedData))
 
     #DiscreteData(botcoin.fetchData(randomDate, timedelta(hours=4)))
