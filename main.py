@@ -170,7 +170,7 @@ def main():
 
     beforeNonMulti = time.time()
     convertedData = convertData(botcoin.fetchData(randomDate, dateRange), randomDate, dateRange, timedelta(seconds=1), threads=1)
-    print("Single thread ran in {} seconds".format(time.time()-beforeMulti))
+    print("Single thread ran in {} seconds".format(time.time()-beforeNonMulti))
     #print(len(convertedData))
 
     #DiscreteData(botcoin.fetchData(randomDate, timedelta(hours=4)))
