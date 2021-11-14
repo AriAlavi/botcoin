@@ -122,7 +122,7 @@ class DiscreteData:
 
         self.transactions = len(rawData)
 
-def convertData(rawData,givenDate,dateRange,givenWindow,**kwargs):
+def convertData(rawData,givenDate,dateRange,givenWindow):
     assert isinstance(rawData, list)
     assert all(isinstance(x, DataPoint) for x in rawData)
     assert isinstance(givenDate, datetime)
@@ -147,8 +147,8 @@ def convertData(rawData,givenDate,dateRange,givenWindow,**kwargs):
         givenDate = endDate
         endDate = endDate + givenWindow
     
-    with Pool(kwargs["threads"]) as p:
-        map_object = p.map(DiscreteData, rawDataList)
+
+    map_object = map(DiscreteData, rawDataList)
     newDataList = list(map_object)
     return newDataList
 
@@ -165,7 +165,7 @@ def main():
     randomDate = datetime(year=2017, month=4, day=20, hour=6, minute=9, second=6)
     dateRange = timedelta(minutes=1)
     beforeMulti = time.time()
-    convertedData = convertData(botcoin.fetchData(randomDate, dateRange), randomDate, dateRange, timedelta(seconds=1), threads=THREAD_COUNT)
+    convertedData = convertData(botcoin.fetchData(randomDate, dateRange), randomDate, dateRange, timedelta(seconds=1), threads=2)
     print("Multi thread ran in {} seconds".format(time.time()-beforeMulti))
 
     beforeNonMulti = time.time()
