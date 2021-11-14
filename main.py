@@ -2,7 +2,13 @@ import csv
 from datetime import datetime, timedelta
 from statistics import median, mean, stdev
 from multiprocessing import Pool
+from decimal import Decimal
 import os
+
+class Precise():
+    def __init__(self, value):
+        self.value = value
+
 
 class DataPoint:
     def __init__(self, time, price, quantity):
@@ -153,16 +159,105 @@ def convertData(rawData,givenDate,dateRange,givenWindow):
     return newDataList
 
 
+def setLeverage(myCash, myCoins, coinPrice, soughtLeverage):
+    assert isinstance(myCash, Decimal)
+    assert isinstance(myCoins, Decimal)
+    assert isinstance(coinPrice, Decimal)
+    assert isinstance(soughtLeverage, Decimal)
+    assert Decimal("0") <= soughtLeverage <= Decimal("1"), "was {} instead".format(float(soughtLeverage))
+    assert myCash >= 0
+    assert myCoins >= 0
+
+    if coinPrice == None or coinPrice <= 0 or myCash + myCoins == 0:
+        return {
+            "cash" : myCash,
+            "coins" : myCoins
+        }
+
+    coinValue = Decimal(myCoins * coinPrice)
+    totalValue = Decimal(myCash + coinValue)
+    assert totalValue > 0
+    currentLeverage = Decimal(coinValue) / Decimal(totalValue)
+
+    leverageDelta = soughtLeverage-currentLeverage
+
+    newCash = myCash
+    newCoins = myCoins
+
+    # print("Delta", float(leverageDelta))
+
+    if leverageDelta > 0:
+        toSpendOnCoins = leverageDelta * totalValue
+        # soughtCoinValue = soughtLeverage * totalValue
+        # toSpendOnCoins = soughtCoinValue - coinValue
+        coinsPurchased = toSpendOnCoins / coinPrice
+        newCash = myCash - toSpendOnCoins
+        newCoins = myCoins + coinsPurchased
+    elif leverageDelta < 0:
+        toSellCoins = leverageDelta * totalValue * -1
+        coinsSold = toSellCoins / coinPrice
+        newCash = myCash + toSellCoins
+        newCoins = myCoins - coinsSold
+
+    return {
+        "cash" : newCash,
+        "coins" : newCoins
+    }
+
+
+def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData, hypothesisFunc, startingCash):
+    assert isinstance(startingDate, datetime) # Should be the exact same starting date as the short term and long term data
+    assert isinstance(timeSteps, timedelta) # Should be the exact same as the time window for the short term data
+    assert isinstance(endingDate, datetime) # Should be the exact same as the starting date + window length for the fetched data
+    assert isinstance(shortTermData, list)
+    assert isinstance(longtermData, list)
+    assert all(isinstance(x, DiscreteData) for x in shortTermData)
+    assert all(isinstance(x, DiscreteData) for x in longtermData)
+    assert callable(hypothesisFunc)
+    assert isinstance(startingCash, int) or isinstance(startingCash, float)
+    
+    assert startingDate < endingDate
+
+    CASH = startingCash
+    BOTCOINS = 0
+    BOTCOIN_PRICE = 1
+
+    now = startingDate
+    while now <= endingDate:
+        print("It is {}".format(now))
+
+        soughtLeverage = hypothesisFunc(None, 4, "Ah")
+        newLeverage = setLeverage(CASH, BOTCOINS, BOTCOIN_PRICE, soughtLeverage)
+        CASH = newLeverage["cash"]
+        BOTCOINS = newLeverage["coins"]
+
+
+
+        now += timeSteps
+
+
 
 def main():
     THREAD_COUNT = os.cpu_count()
-    print("I have {} threads".format(THREAD_COUNT))
+    print("I have {} cores".format(THREAD_COUNT))
     filename = "XMRUSD.csv"
     botcoin = BotCoin(filename)
-    randomDate = datetime(year=2017, month=4, day=20, hour=6, minute=9, second=6)
+
+    startingDate = datetime(year=2017, month=4, day=20, hour=6, minute=9, second=6)
+    endingDate = datetime(year=2017, month=5, day=1)
     dateRange = timedelta(minutes=1)
 
-    convertedData = convertData(botcoin.fetchData(randomDate, dateRange), randomDate, dateRange, timedelta(seconds=1))
+    dateRange = endingDate-startingDate
+    allData = botcoin.fetchData(startingDate, dateRange)
+    shortTerm = convertData(allData, startingDate, dateRange, timedelta(hours=1))
+    longTerm = convertData(allData, startingDate, dateRange, timedelta(hours=24))
+
+    def hypothesis(**args):
+        import random
+        return random.randint(0, 100)
+
+    result = simulation(startingDate, timedelta(hours=1), endingDate, shortTerm, longTerm, hypothesis, 1_000)
+    
 
     #DiscreteData(botcoin.fetchData(randomDate, timedelta(hours=4)))
     #DiscreteData(botcoin.fetchData(randomDate, timedelta(days=1)))
