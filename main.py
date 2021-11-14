@@ -154,9 +154,6 @@ def convertData(rawData,givenDate,dateRange,givenWindow):
 
 
 
-import time
-
-
 def main():
     THREAD_COUNT = os.cpu_count()
     print("I have {} threads".format(THREAD_COUNT))
@@ -164,7 +161,7 @@ def main():
     botcoin = BotCoin(filename)
     randomDate = datetime(year=2017, month=4, day=20, hour=6, minute=9, second=6)
     dateRange = timedelta(minutes=1)
-    beforeMulti = time.time()
+
     convertedData = convertData(botcoin.fetchData(randomDate, dateRange), randomDate, dateRange, timedelta(seconds=1))
 
     #DiscreteData(botcoin.fetchData(randomDate, timedelta(hours=4)))
