@@ -188,8 +188,6 @@ def setLeverage(myCash, myCoins, coinPrice, soughtLeverage):
 
     if leverageDelta > 0:
         toSpendOnCoins = leverageDelta * totalValue
-        # soughtCoinValue = soughtLeverage * totalValue
-        # toSpendOnCoins = soughtCoinValue - coinValue
         coinsPurchased = toSpendOnCoins / coinPrice
         newCash = myCash - toSpendOnCoins
         newCoins = myCoins + coinsPurchased
@@ -214,13 +212,15 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
     assert all(isinstance(x, DiscreteData) for x in shortTermData)
     assert all(isinstance(x, DiscreteData) for x in longtermData)
     assert callable(hypothesisFunc)
-    assert isinstance(startingCash, int) or isinstance(startingCash, float)
+    assert isinstance(startingCash, Decimal)
     
     assert startingDate < endingDate
 
     CASH = startingCash
-    BOTCOINS = 0
-    BOTCOIN_PRICE = 1
+    BOTCOINS = Decimal(0)
+    BOTCOIN_PRICE = Decimal(1)
+    VALUE_HISTORY = []
+    LEVERAGE_HISTORY = []
 
     now = startingDate
     while now <= endingDate:
@@ -230,10 +230,19 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
         newLeverage = setLeverage(CASH, BOTCOINS, BOTCOIN_PRICE, soughtLeverage)
         CASH = newLeverage["cash"]
         BOTCOINS = newLeverage["coins"]
+        VALUE_HISTORY.append(CASH + BOTCOINS * BOTCOIN_PRICE)
+        LEVERAGE_HISTORY.append(soughtLeverage)
 
 
 
         now += timeSteps
+    return {
+        "success" : (((CASH + BOTCOINS * BOTCOIN_PRICE) - startingCash) / startingCash),
+        "valueHistory" : VALUE_HISTORY,
+        "leverageHistory" : LEVERAGE_HISTORY,
+    }
+    
+    
 
 
 
@@ -252,12 +261,12 @@ def main():
     shortTerm = convertData(allData, startingDate, dateRange, timedelta(hours=1))
     longTerm = convertData(allData, startingDate, dateRange, timedelta(hours=24))
 
-    def hypothesis(**args):
+    def hypothesis(*args):
         import random
-        return random.randint(0, 100)
+        return Decimal(random.randint(0, 100))/100
 
-    result = simulation(startingDate, timedelta(hours=1), endingDate, shortTerm, longTerm, hypothesis, 1_000)
-    
+    result = simulation(startingDate, timedelta(hours=1), endingDate, shortTerm, longTerm, hypothesis, Decimal(1_000))
+    print("{}% success".format(result["success"]))
 
     #DiscreteData(botcoin.fetchData(randomDate, timedelta(hours=4)))
     #DiscreteData(botcoin.fetchData(randomDate, timedelta(days=1)))
