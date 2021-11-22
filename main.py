@@ -1,38 +1,12 @@
 import csv
 from datetime import datetime, timedelta
-from statistics import median, mean, stdev
 from multiprocessing import Pool
 from decimal import Decimal
 import os
 
-class Precise():
-    def __init__(self, value):
-        self.value = value
 
-
-class DataPoint:
-    def __init__(self, time, price, quantity):
-        assert isinstance(time, int)
-        assert isinstance(quantity, float)
-        assert isinstance(price, float)
-
-        self.time = time
-        self.quantity = quantity
-        self.price = price
-
-    def readUnix(self,givenTimestamp) -> str:
-        assert isinstance(givenTimestamp, int)
-        return str(datetime.fromtimestamp(givenTimestamp).strftime("%m/%d/%Y %H:%M"))
-
-    def timestampToDatetime(self,givenTiemstamp) -> datetime:
-        assert isinstance(givenTiemstamp, int)
-        return datetime.fromtimestamp(givenTiemstamp)
-
-    def __str__(self):
-        return "[{}] {} @ ${}".format(self.readUnix(self.time), self.quantity, self.price)
-
-    def __repr__(self):
-        return str(self)
+from dataTypes import *
+import hypothesis
 
 
 class BotCoin:
@@ -69,63 +43,6 @@ class BotCoin:
 
         return FETCHED_DATA
 
-def getDelta(givenList):
-    assert isinstance(givenList, list)
-    deltaList = []
-    if len(givenList) <= 1:
-        return deltaList
-    for i in range(1, len(givenList)):
-        delta = givenList[i] - givenList[i-1]
-        deltaList.append(delta)
-    return deltaList
-
-def safeMean(input):
-    assert isinstance(input, list)
-    if len(input) == 0:
-        return None
-    elif len(input) == 1:
-        return input[0]
-    else:
-        return mean(input)
-
-
-class DiscreteData:
-    def __init__(self, rawData, startDate, timestep):
-        assert isinstance(rawData, list)
-        assert all(isinstance(x, DataPoint) for x in rawData)
-        assert isinstance(startDate, datetime)
-        assert isinstance(timestep, timedelta)
-
-        self.date = startDate
-        self.endDate = self.date + timestep
-
-        self.safeMeanPrice = safeMean([x.price for x in rawData])
-        self.safeMeanDeltaPrice = safeMean(getDelta([x.price for x in rawData]))
-        self.safeMeanDeltaDeltaPrice = safeMean(getDelta(getDelta([x.price for x in rawData])))
-
-        self.volume = sum(x.quantity for x in rawData)
-
-        self.safeMeanVolumePerTransaction = safeMean([x.quantity for x in rawData])
-        self.safeMeanDeltaVolumePerTransaction = safeMean(getDelta([x.quantity for x in rawData]))
-        self.safeMeanDeltaDeltaVolumePerTransaction = safeMean(getDelta(getDelta([x.quantity for x in rawData])))
-
-        if len(rawData) < 2:
-            self.priceStdev = None
-            self.volumeStdev = None
-        else:
-            self.priceStdev = stdev(x.price for x in rawData)
-            self.volumeStdev = stdev(x.quantity for x in rawData)
-
-        if len(rawData) < 1:
-            self.minPrice = None
-            self.maxPrice = None
-
-        else:
-            self.minPrice = min(x.price for x in rawData)
-            self.maxPrice = max(x.price for x in rawData)
-
-
-        self.transactions = len(rawData)
 
 def convertData(rawData,givenDate,dateRange,givenWindow):
     assert isinstance(rawData, list)
@@ -268,7 +185,7 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
                 except:
                     breaking = True
 
-        soughtLeverage = hypothesisFunc(currentShortTerm, currentLongTerm, customParameters)
+        soughtLeverage = hypothesisFunc(currentShortTerm, currentLongTerm, CASH, BOTCOINS, customParameters)
         newLeverage = setLeverage(CASH, BOTCOINS, BOTCOIN_PRICE, soughtLeverage)
         if BOTCOIN_PRICE <= 0:
             now += timeSteps
@@ -279,13 +196,15 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
             if CASH + epsilon < 0:
                 raise Exception("Cash cannot go negative! It is {}".format(CASH))
             else:
-                CASH = 0
+                print("Epsilon problem encountered for cash: {}".format(CASH))
+                CASH = Decimal(0)
 
         if BOTCOINS < 0:
             if BOTCOINS + epsilon < 0:
-                raise Exception("Cash cannot go negative! It is {}".format(BOTCOINS))
+                raise Exception("Botcoins cannot go negative! It is {}".format(BOTCOINS))
             else:
-                BOTCOINS = 0
+                print("Epsilon problem encountered for botcoins: {}".format(BOTCOINS))
+                BOTCOINS = Decimal(0)
 
         CURRENT_ASSETS = BOTCOINS * BOTCOIN_PRICE
         CURRENT_ASSETS += CASH
@@ -331,30 +250,13 @@ def main():
     allData = botcoin.fetchData(startingDate, dateRange)
     shortTerm = convertData(allData, startingDate, dateRange, timedelta(hours=1))
     longTerm = convertData(allData, startingDate, dateRange, timedelta(hours=24))
+
     for x in longTerm:
         print("L RANGE:", x.date, " - ", x.endDate)
     # for x in shortTerm:
     #     print("S RANGE:", x.date, " - ", x.endDate)
-
-    def hypothesis(*args):
-        import random
-        return Decimal(random.randint(0, 100))/100
-
-    # result = simulation(startingDate, timedelta(hours=1), endingDate, shortTerm, longTerm, hypothesis, Decimal(1_000))
-    # print("{}% success".format(result["success"]))
-
-    #DiscreteData(botcoin.fetchData(randomDate, timedelta(hours=4)))
-    #DiscreteData(botcoin.fetchData(randomDate, timedelta(days=1)))
-    #DiscreteData(botcoin.fetchData(randomDate, timedelta(minutes=1)))
-    #DiscreteData([DataPoint(1, float(1), float(1))])
-
-    # print(botcoin.fetchData(randomDate, timedelta(hours=3)))
-    # print(botcoin.fetchData(randomDate, timedelta(hours=1)))
-    # print(botcoin.fetchData(randomDate, timedelta(minutes=1)))
-    # print(botcoin.fetchData(randomDate, timedelta(days=1)))
-    
-    
-    
+    result = simulation(startingDate, timedelta(hours=1), endingDate, shortTerm, longTerm, hypothesis.bounce, Decimal(1_000))
+    print("{}% success".format(result["success"]))    
 
     
 if __name__ == "__main__":
