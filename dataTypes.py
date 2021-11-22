@@ -40,13 +40,13 @@ class DiscreteData:
 
         self.safeMeanPrice = safeMean([x.price for x in rawData])
         self.safeMeanDeltaPrice = safeMean(getDelta([x.price for x in rawData]))
-        self.safeMeanDeltaDeltaPrice = safeMean(getDelta(getDelta([x.price for x in rawData])))
+        # self.safeMeanDeltaDeltaPrice = safeMean(getDelta(getDelta([x.price for x in rawData])))
 
         self.volume = sum(x.quantity for x in rawData)
 
         self.safeMeanVolumePerTransaction = safeMean([x.quantity for x in rawData])
         self.safeMeanDeltaVolumePerTransaction = safeMean(getDelta([x.quantity for x in rawData]))
-        self.safeMeanDeltaDeltaVolumePerTransaction = safeMean(getDelta(getDelta([x.quantity for x in rawData])))
+        # self.safeMeanDeltaDeltaVolumePerTransaction = safeMean(getDelta(getDelta([x.quantity for x in rawData])))
 
         if len(rawData) < 2:
             self.priceStdev = None
