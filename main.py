@@ -2,18 +2,19 @@ import csv
 from datetime import date, datetime, timedelta
 from multiprocessing import Pool
 from decimal import Decimal
+import multiprocessing
 import pickle
 import pathlib
 import os
 
-from numpy.lib.arraysetops import isin
+import numpy as np
 
 
 from dataTypes import *
 import hypothesis
 
 
-class BotCoin:
+class RawData:
     def __init__(self, filename):
         self.filename = filename
         self.data = self.readFile()
@@ -46,40 +47,6 @@ class BotCoin:
                 break
 
         return FETCHED_DATA
-
-
-def convertData(rawData,givenDate,dateRange,givenWindow):
-    assert isinstance(rawData, list)
-    assert all(isinstance(x, DataPoint) for x in rawData)
-    assert isinstance(givenDate, datetime)
-    assert isinstance(dateRange,timedelta)
-    assert isinstance(givenWindow,timedelta)
-    
-    rawDataList = []
-    datetimeList = []
-    beginDate = givenDate
-    endDate = givenDate + givenWindow
-    endDateInt = int(endDate.timestamp())
-    datetimeList.append(givenDate)
-    
-    while givenDate < beginDate + dateRange:
-        sampleData = []
-        for transaction in rawData:
-            if  givenDate <= datetime.fromtimestamp(transaction.time) <= endDate:
-                sampleData.append(transaction)
-            if transaction.time > endDateInt:
-                continue
-        
-        rawData = list(set(rawData) - set(sampleData))
-        rawDataList.append(sampleData)
-        givenDate = endDate
-        datetimeList.append(givenDate)
-        endDate = endDate + givenWindow
-    
-
-    map_object = map(DiscreteData, rawDataList, datetimeList, [givenWindow] * len(rawDataList))
-    newDataList = list(map_object)
-    return newDataList
 
 
 def setLeverage(myCash, myCoins, coinPrice, soughtLeverage):
@@ -208,14 +175,14 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
             if CASH + epsilon < 0:
                 raise Exception("Cash cannot go negative! It is {}".format(CASH))
             else:
-                print("Epsilon problem encountered for cash: {}".format(CASH))
+                # print("Epsilon problem encountered for cash: {}".format(CASH))
                 CASH = Decimal(0)
 
         if BOTCOINS < 0:
             if BOTCOINS + epsilon < 0:
                 raise Exception("Botcoins cannot go negative! It is {}".format(BOTCOINS))
             else:
-                print("Epsilon problem encountered for botcoins: {}".format(BOTCOINS))
+                # print("Epsilon problem encountered for botcoins: {}".format(BOTCOINS))
                 BOTCOINS = Decimal(0)
 
         CURRENT_ASSETS = BOTCOINS * BOTCOIN_PRICE
@@ -238,7 +205,7 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
         now += timeSteps
 
 
-    print(CURRENT_ASSETS)
+    # print(CURRENT_ASSETS)
     return {
         "success" : ((CURRENT_ASSETS - startingCash) / startingCash) * 100,
         "valueHistory" : VALUE_HISTORY,
@@ -373,7 +340,7 @@ def getData(filename, startDate, endDate, shortTermWindow, longTermWindow):
         file.close()
         return data
     
-    botcoin = BotCoin(filename)
+    botcoin = RawData(filename)
     dateRange = endDate-startDate
     allData = botcoin.fetchData(startDate, dateRange)
     shortTerm = convertData(allData, startDate, dateRange, shortTermWindow)
@@ -388,6 +355,18 @@ def getData(filename, startDate, endDate, shortTermWindow, longTermWindow):
     file.close()
     return data
 
+class HypothesisTester:
+    def __init__(self, startingDate, shortTermWindow, endingDate, shortTermData, longTermData, startingCash):
+        self.startingDate = startingDate
+        self.shortTermWindow = shortTermWindow
+        self.endingDate = endingDate
+        self.shortTermData = shortTermData
+        self.longTermData = longTermData
+        self.startingCash = startingCash
+
+    def testHypothesis(self, hypothesis):
+        assert callable(hypothesis)
+        return simulation(self.startingDate, self.shortTermWindow, self.endingDate, self.shortTermData, self.longTermData, hypothesis, self.startingCash)["success"]
 
 def main():
     THREAD_COUNT = os.cpu_count()
@@ -405,10 +384,29 @@ def main():
     #     print("L RANGE:", x.date, " - ", x.endDate)
     # # for x in shortTerm:
     # #     print("S RANGE:", x.date, " - ", x.endDate)
-    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.bollingerBandsSafe, Decimal(1_000))
-    print("{}% success".format(result["success"]))    
 
-    simulationPlotter(data["long"], result["valueHistory"], result["leverageHistory"], result["chartingParameters"], result["dateTimeHistory"])
+
+    # result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.bollingerBandsSafe, Decimal(1_000))
+    # print("{}% success".format(result["success"]))    
+    # simulationPlotter(data["long"], result["valueHistory"], result["leverageHistory"], result["chartingParameters"], result["dateTimeHistory"])
+
+    # hypothesisTester = lambda hypothesis: simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis, Decimal(1_000))
+    hypothesisTester = HypothesisTester(startingDate, shortTermWindow, endingDate, data["short"], data["long"], Decimal(1_000)).testHypothesis
+
+    inputList = np.arange(.05, 2, .1)
+    hypothesisList = [hypothesis.HypothesisVariation(hypothesis.bollingerBandsSafe, bollinger_number_of_stdev=i).hypothesis for i in inputList]
+
+    pool = multiprocessing.Pool(THREAD_COUNT)
+    results = pool.map(hypothesisTester, hypothesisList)
+    associatedDict = {}
+    for i in range(len(results)):
+        associatedDict[inputList[i]] = results[i]
+
+        print("Stdev {} : {}% profit".format(inputList[i], results[i]))
+    
+    bestResult = max(results)
+    bestResultIndex = results.index(bestResult)
+    print("Best: {} : {}% profit".format(inputList[bestResultIndex], results[bestResultIndex]))
 
     
 if __name__ == "__main__":

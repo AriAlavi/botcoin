@@ -31,7 +31,7 @@ def bounce(shortTerm, longTerm, cash, botcoins, customParameters, chartingParame
 def hold(*args):
     return Decimal(1)
 
-def bollingerBandsSafe(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters):
+def bollingerBandsSafe(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters, **kwargs):
     assert isinstance(shortTerm, DiscreteData)
     assert isinstance(longTerm, DiscreteData)
     assert isinstance(cash, Decimal)
@@ -39,8 +39,8 @@ def bollingerBandsSafe(shortTerm, longTerm, cash, botcoins, customParameters, ch
     assert isinstance(customParameters, dict)
     assert isinstance(chartingParameters, dict)
 
-    BOLLINGER_BAND_TIME_PERIOD = 20
-    BOLLINGER_NUMBER_OF_STDEV = 1.5
+    BOLLINGER_BAND_TIME_PERIOD = kwargs.get("bollinger_band_time_period", 20)
+    BOLLINGER_NUMBER_OF_STDEV = kwargs.get("bollinger_number_of_stdev", 2)
 
     if len(customParameters.keys()) == 0:
         customParameters["history"] = []
@@ -96,3 +96,18 @@ def bollingerBandsSafe(shortTerm, longTerm, cash, botcoins, customParameters, ch
             return Decimal(0)
    
     return lastLeverage
+
+class HypothesisVariation:
+    def __init__(self, function, **kwargs):
+        assert callable(function)
+        self.kwargs = kwargs
+
+    def hypothesis(self, shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters):
+        return bollingerBandsSafe(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters, **self.kwargs)
+
+
+# def bollingerBandStdevVariation(givenStdev):
+#     assert isinstance(givenStdev, float) or isinstance(givenStdev, int) or isinstance(givenStdev, Decimal)
+#     def bollingerBandWrapper(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters):
+#         return bollingerBandsSafe(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters, bollinger_number_of_stdev=givenStdev)
+#     return bollingerBandWrapper

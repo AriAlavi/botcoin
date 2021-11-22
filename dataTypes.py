@@ -90,3 +90,36 @@ class DiscreteData:
             delta = givenList[i] - givenList[i-1]
             deltaList.append(delta)
         return deltaList
+
+def convertData(rawData,givenDate,dateRange,givenWindow):
+    assert isinstance(rawData, list)
+    assert all(isinstance(x, DataPoint) for x in rawData)
+    assert isinstance(givenDate, datetime)
+    assert isinstance(dateRange,timedelta)
+    assert isinstance(givenWindow,timedelta)
+    
+    rawDataList = []
+    datetimeList = []
+    beginDate = givenDate
+    endDate = givenDate + givenWindow
+    endDateInt = int(endDate.timestamp())
+    datetimeList.append(givenDate)
+    
+    while givenDate < beginDate + dateRange:
+        sampleData = []
+        for transaction in rawData:
+            if  givenDate <= datetime.fromtimestamp(transaction.time) <= endDate:
+                sampleData.append(transaction)
+            if transaction.time > endDateInt:
+                continue
+        
+        rawData = list(set(rawData) - set(sampleData))
+        rawDataList.append(sampleData)
+        givenDate = endDate
+        datetimeList.append(givenDate)
+        endDate = endDate + givenWindow
+    
+
+    map_object = map(DiscreteData, rawDataList, datetimeList, [givenWindow] * len(rawDataList))
+    newDataList = list(map_object)
+    return newDataList
