@@ -31,7 +31,7 @@ def bounce(shortTerm, longTerm, cash, botcoins, customParameters, chartingParame
 def hold(*args):
     return Decimal(1)
 
-def bollingerBands(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters):
+def bollingerBandsSafe(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters):
     assert isinstance(shortTerm, DiscreteData)
     assert isinstance(longTerm, DiscreteData)
     assert isinstance(cash, Decimal)
@@ -40,7 +40,7 @@ def bollingerBands(shortTerm, longTerm, cash, botcoins, customParameters, charti
     assert isinstance(chartingParameters, dict)
 
     BOLLINGER_BAND_TIME_PERIOD = 20
-    BOLLINGER_NUMBER_OF_STDEV = 2
+    BOLLINGER_NUMBER_OF_STDEV = 1.5
 
     if len(customParameters.keys()) == 0:
         customParameters["history"] = []
@@ -62,8 +62,8 @@ def bollingerBands(shortTerm, longTerm, cash, botcoins, customParameters, charti
 
     history = customParameters["history"]
     if len(history) <= BOLLINGER_BAND_TIME_PERIOD / 10:
-        chartingParameters["lowerBound"] = 0
-        chartingParameters["upperBound"] = 0
+        chartingParameters["lowerBound"] = None
+        chartingParameters["upperBound"] = None
         return Decimal(0)
 
     currentPrice = shortTerm.safeMeanPrice
