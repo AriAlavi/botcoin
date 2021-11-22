@@ -373,8 +373,8 @@ def main():
     print("I have {} cores".format(THREAD_COUNT))
     FILENAME = "XMRUSD.csv"
 
-    startingDate = datetime(year=2017, month=4, day=1, hour=0, minute=0, second=0)
-    endingDate = datetime(year=2017, month=6, day=10)
+    startingDate = datetime(year=2017, month=1, day=1, hour=0, minute=0, second=0)
+    endingDate = datetime(year=2019, month=1, day=1)
     shortTermWindow = timedelta(hours=1)
     longTermWindow = timedelta(hours=24)
 
@@ -386,27 +386,27 @@ def main():
     # #     print("S RANGE:", x.date, " - ", x.endDate)
 
 
-    # result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.bollingerBandsSafe, Decimal(1_000))
-    # print("{}% success".format(result["success"]))    
-    # simulationPlotter(data["long"], result["valueHistory"], result["leverageHistory"], result["chartingParameters"], result["dateTimeHistory"])
+    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.bollingerBandsSafe, Decimal(1_000))
+    print("{}% success".format(result["success"]))    
+    simulationPlotter(data["long"], result["valueHistory"], result["leverageHistory"], result["chartingParameters"], result["dateTimeHistory"])
 
-    # hypothesisTester = lambda hypothesis: simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis, Decimal(1_000))
-    hypothesisTester = HypothesisTester(startingDate, shortTermWindow, endingDate, data["short"], data["long"], Decimal(1_000)).testHypothesis
 
-    inputList = np.arange(.05, 2, .1)
-    hypothesisList = [hypothesis.HypothesisVariation(hypothesis.bollingerBandsSafe, bollinger_number_of_stdev=i).hypothesis for i in inputList]
+    # hypothesisTester = HypothesisTester(startingDate, shortTermWindow, endingDate, data["short"], data["long"], Decimal(1_000)).testHypothesis
 
-    pool = multiprocessing.Pool(THREAD_COUNT)
-    results = pool.map(hypothesisTester, hypothesisList)
-    associatedDict = {}
-    for i in range(len(results)):
-        associatedDict[inputList[i]] = results[i]
+    # inputList = np.arange(.01, 1, .01)
+    # hypothesisList = [hypothesis.HypothesisVariation(hypothesis.bollingerBandsSafe, bollinger_number_of_stdev=i).hypothesis for i in inputList]
 
-        print("Stdev {} : {}% profit".format(inputList[i], results[i]))
+    # pool = multiprocessing.Pool(THREAD_COUNT)
+    # results = pool.map(hypothesisTester, hypothesisList)
+    # associatedDict = {}
+    # for i in range(len(results)):
+    #     associatedDict[inputList[i]] = results[i]
+
+    #     print("Stdev {} : {}% profit".format(inputList[i], results[i]))
     
-    bestResult = max(results)
-    bestResultIndex = results.index(bestResult)
-    print("Best: {} : {}% profit".format(inputList[bestResultIndex], results[bestResultIndex]))
+    # bestResult = max(results)
+    # bestResultIndex = results.index(bestResult)
+    # print("Best: {} : {}% profit".format(inputList[bestResultIndex], results[bestResultIndex]))
 
     
 if __name__ == "__main__":
