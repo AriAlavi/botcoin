@@ -1,21 +1,24 @@
+from numpy.lib.arraysetops import isin
 from dataTypes import *
 from decimal import Decimal
 
-def randomChoice(shortTerm, longTerm, cash, botcoins, customParameters):
+def randomChoice(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters):
     assert isinstance(shortTerm, DiscreteData)
     assert isinstance(longTerm, DiscreteData)
     assert isinstance(cash, Decimal)
     assert isinstance(botcoins, Decimal)
     assert isinstance(customParameters, dict)
+    assert isinstance(chartingParameters, dict)
     import random
     return Decimal(random.randint(0, 100))/100
 
-def bounce(shortTerm, longTerm, cash, botcoins, customParameters):
+def bounce(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters):
     assert isinstance(shortTerm, DiscreteData)
     assert isinstance(longTerm, DiscreteData)
     assert isinstance(cash, Decimal)
     assert isinstance(botcoins, Decimal), "{} instead".format(type(botcoins))
     assert isinstance(customParameters, dict)
+    assert isinstance(chartingParameters, dict)
 
     sellAll = customParameters.get("sell", False)
     if sellAll:
@@ -28,17 +31,26 @@ def bounce(shortTerm, longTerm, cash, botcoins, customParameters):
 def hold(*args):
     return Decimal(1)
 
-def bollingerBands(shortTerm, longTerm, cash, botcoins, customParameters):
+def bollingerBands(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters):
     assert isinstance(shortTerm, DiscreteData)
     assert isinstance(longTerm, DiscreteData)
     assert isinstance(cash, Decimal)
     assert isinstance(botcoins, Decimal), "{} instead".format(type(botcoins))
     assert isinstance(customParameters, dict)
+    assert isinstance(chartingParameters, dict)
 
     BOLLINGER_BAND_TIME_PERIOD = 20
+    BOLLINGER_NUMBER_OF_STDEV = 2
 
-    if not isinstance(customParameters.get("history", None), list):
+    if len(customParameters.keys()) == 0:
         customParameters["history"] = []
+        customParameters["lastLeverage"] = Decimal(0)
+        customParameters["buySignal"] = False
+        customParameters["sellSignal"] = False
+        chartingParameters["lowerBound"] = []
+        chartingParameters["upperBound"] = []
+
+    lastLeverage = customParameters["lastLeverage"]
     
     if len(customParameters["history"]) == 0:
         customParameters["history"].append(longTerm)
@@ -48,6 +60,39 @@ def bollingerBands(shortTerm, longTerm, cash, botcoins, customParameters):
         if len(customParameters["history"]) > BOLLINGER_BAND_TIME_PERIOD:
             customParameters["history"].pop(0)
 
-    # print(len(customParameters["history"]))
+    history = customParameters["history"]
+    if len(history) <= BOLLINGER_BAND_TIME_PERIOD / 10:
+        chartingParameters["lowerBound"] = 0
+        chartingParameters["upperBound"] = 0
+        return Decimal(0)
 
-    return Decimal(1)
+    currentPrice = shortTerm.safeMeanPrice
+
+    movingAveragePrice = mean([x.safeMeanPrice for x in history])
+    movingAverageStdev = stdev([x.safeMeanPrice for x in history])
+    upperBound = movingAveragePrice + (movingAverageStdev * BOLLINGER_NUMBER_OF_STDEV)
+    lowerBound = movingAveragePrice - (movingAverageStdev * BOLLINGER_NUMBER_OF_STDEV)
+
+    chartingParameters["lowerBound"] = lowerBound
+    chartingParameters["upperBound"] = upperBound
+
+    if not currentPrice:
+        return lastLeverage
+
+    # print("AVG PRICE", movingAveragePrice, "STDEV", movingAverageStdev, "PRICE NOW", shortTerm.safeMeanPrice)
+
+    if currentPrice > upperBound:
+        customParameters["sellSignal"] = True
+        customParameters["buySignal"] = False
+    elif currentPrice < lowerBound:
+        customParameters["sellSignal"] = False
+        customParameters["buySignal"] = True
+    else:
+        if customParameters["buySignal"]:
+            customParameters["lastLeverage"] = Decimal(1)
+            return Decimal(1)
+        elif customParameters["sellSignal"]:
+            customParameters["lastLeverage"] = Decimal(0)
+            return Decimal(0)
+   
+    return lastLeverage

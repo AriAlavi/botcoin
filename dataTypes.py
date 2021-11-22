@@ -56,12 +56,16 @@ class DiscreteData:
             self.volumeStdev = stdev(x.quantity for x in rawData)
 
         if len(rawData) < 1:
-            self.minPrice = None
-            self.maxPrice = None
+            self.low = None
+            self.high = None
+            self.open = None
+            self.close = None
 
         else:
-            self.minPrice = min(x.price for x in rawData)
-            self.maxPrice = max(x.price for x in rawData)
+            self.low = min(x.price for x in rawData)
+            self.high = max(x.price for x in rawData)
+            self.open= rawData[0].price
+            self.close = rawData[-1].price
 
 
         self.transactions = len(rawData)

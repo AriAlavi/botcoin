@@ -1,8 +1,10 @@
 import csv
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from multiprocessing import Pool
 from decimal import Decimal
 import os
+
+from numpy.lib.arraysetops import isin
 
 
 from dataTypes import *
@@ -139,8 +141,11 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
     CASH = startingCash
     BOTCOINS = Decimal(0)
     BOTCOIN_PRICE = Decimal(-1)
+    LAST_BOTCION_PRICE = Decimal(0)
     VALUE_HISTORY = []
     LEVERAGE_HISTORY = []
+    DATETIME_HISTORY = []
+    CHARTING_PARAMETERS_HISTORY = {}
 
     now = startingDate
     
@@ -185,11 +190,21 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
                 except:
                     breaking = True
 
-        soughtLeverage = hypothesisFunc(currentShortTerm, currentLongTerm, CASH, BOTCOINS, customParameters)
+        chartingParameters = {}
+        soughtLeverage = hypothesisFunc(currentShortTerm, currentLongTerm, CASH, BOTCOINS, customParameters, chartingParameters)
+        if len(chartingParameters.keys()) > 0:
+            if len(CHARTING_PARAMETERS_HISTORY.keys()) == 0:
+                for key, value in chartingParameters.items():
+                    CHARTING_PARAMETERS_HISTORY[key] = [value,]
+            else:
+                for key, value in chartingParameters.items():
+                    CHARTING_PARAMETERS_HISTORY[key].append(value)
+
         newLeverage = setLeverage(CASH, BOTCOINS, BOTCOIN_PRICE, soughtLeverage)
         if BOTCOIN_PRICE <= 0:
-            now += timeSteps
-            continue
+            BOTCOIN_PRICE = LAST_BOTCION_PRICE
+        else:
+            LAST_BOTCION_PRICE = BOTCOIN_PRICE
         CASH = newLeverage["cash"]
         BOTCOINS = newLeverage["coins"]
         if CASH < 0:
@@ -211,6 +226,7 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
 
         VALUE_HISTORY.append(CURRENT_ASSETS)
         LEVERAGE_HISTORY.append(soughtLeverage)
+        DATETIME_HISTORY.append(now)
 
         # Print the state START
 
@@ -225,15 +241,77 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
         now += timeSteps
 
 
-
+    print(CURRENT_ASSETS)
     return {
         "success" : ((CURRENT_ASSETS - startingCash) / startingCash) * 100,
         "valueHistory" : VALUE_HISTORY,
         "leverageHistory" : LEVERAGE_HISTORY,
+        "chartingParameters" : CHARTING_PARAMETERS_HISTORY,
+        "dateTimeHistory" : DATETIME_HISTORY,
     }
-    
-    
+       
+def simulationPlotter(longTermData, valueHistory, leverageHistory, chartingParameters, dateHistory):
+    assert isinstance(longTermData, list)
+    assert isinstance(valueHistory, list)
+    assert isinstance(leverageHistory, list)
+    assert isinstance(chartingParameters, dict)
+    import matplotlib.pyplot as plt
+    import mplfinance as mpf
+    import pandas as pd
 
+    print(len(valueHistory), len(leverageHistory), len(chartingParameters["lowerBound"]), len(dateHistory))
+
+
+    preMainFrame = []
+    preOtherFrames = []
+    currentDatePointer = 0
+    for x in longTermData:
+        print("")
+        print("LONG TERM:", x.date)
+        relevantData = {
+            "Date" : x.date,
+            "value" : [],
+            "leverage" : [],
+        }
+        for key in chartingParameters.keys():
+            relevantData[key] = []
+        while dateHistory[currentDatePointer] < x.date:
+            print("Skip", dateHistory[currentDatePointer])
+            currentDatePointer += 1
+        while dateHistory[currentDatePointer] < x.endDate:
+            print("Accept", dateHistory[currentDatePointer])
+            relevantData["value"].append(valueHistory[currentDatePointer])
+            relevantData["leverage"].append(leverageHistory[currentDatePointer])
+            currentDatePointer += 1
+
+
+        for key, value in relevantData.items():
+            if key not in ["Date"]:
+                if len(value) == 0:
+                    relevantData[key] = 0
+                else:
+                    relevantData[key] = mean(value)
+        preOtherFrames.append(relevantData)
+
+        currentMainFrame = {
+            "Date" : x.date,
+            "Open" : x.open,
+            "Close" : x.close,
+            "High" : x.high,
+            "Low" : x.low,
+            "Volume" : x.volume
+        }
+        preMainFrame.append(currentMainFrame)
+
+    mainFrame = pd.DataFrame(preMainFrame)
+    mainFrame.set_index("Date", inplace=True)
+
+    otherFrame = pd.DataFrame(preOtherFrames)
+    otherFrame.set_index("Date", inplace=True)
+    print(otherFrame)
+
+    # ap = mpf.make_addplot()
+    mpf.plot(mainFrame, type="candle", volume=True)
 
 
 def main():
@@ -242,8 +320,8 @@ def main():
     filename = "XMRUSD.csv"
     botcoin = BotCoin(filename)
 
-    startingDate = datetime(year=2017, month=4, day=20, hour=0, minute=0, second=0)
-    endingDate = datetime(year=2017, month=4, day=24)
+    startingDate = datetime(year=2017, month=4, day=1, hour=0, minute=0, second=0)
+    endingDate = datetime(year=2017, month=5, day=10)
     dateRange = timedelta(minutes=1)
 
     dateRange = endingDate-startingDate
@@ -253,10 +331,13 @@ def main():
 
     for x in longTerm:
         print("L RANGE:", x.date, " - ", x.endDate)
-    # for x in shortTerm:
-    #     print("S RANGE:", x.date, " - ", x.endDate)
-    result = simulation(startingDate, timedelta(hours=1), endingDate, shortTerm, longTerm, hypothesis.bounce, Decimal(1_000))
+    # # for x in shortTerm:
+    # #     print("S RANGE:", x.date, " - ", x.endDate)
+    result = simulation(startingDate, timedelta(hours=1), endingDate, shortTerm, longTerm, hypothesis.bollingerBands, Decimal(1_000))
     print("{}% success".format(result["success"]))    
+    for x in result["dateTimeHistory"]:
+        print(x)
+    # simulationPlotter(longTerm, result["valueHistory"], result["leverageHistory"], result["chartingParameters"], result["dateTimeHistory"])
 
     
 if __name__ == "__main__":
