@@ -139,8 +139,9 @@ def convertData(rawData,givenDate,dateRange,givenWindow):
     beginDate = givenDate
     endDate = givenDate + givenWindow
     endDateInt = int(endDate.timestamp())
+    datetimeList.append(givenDate)
     
-    while givenDate <= beginDate + dateRange:
+    while givenDate < beginDate + dateRange:
         sampleData = []
         for transaction in rawData:
             if  givenDate <= datetime.fromtimestamp(transaction.time) <= endDate:
@@ -335,6 +336,7 @@ def main():
         print("L RANGE:", x.date, " - ", x.endDate)
     # for x in shortTerm:
     #     print("S RANGE:", x.date, " - ", x.endDate)
+    print(dateRange)
 
     def hypothesis(*args):
         import random
