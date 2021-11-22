@@ -2,6 +2,8 @@ import csv
 from datetime import date, datetime, timedelta
 from multiprocessing import Pool
 from decimal import Decimal
+import pickle
+import pathlib
 import os
 
 from numpy.lib.arraysetops import isin
@@ -349,31 +351,64 @@ def simulationPlotter(longTermData, valueHistory, leverageHistory, chartingParam
     ]
     mpf.plot(mainFrame, type="candle", volume=True, addplot=addplots, main_panel=0, volume_panel=1, num_panels=3)
 
+def getData(filename, startDate, endDate, shortTermWindow, longTermWindow):
+    assert isinstance(filename, str)
+    assert isinstance(startDate, datetime)
+    assert isinstance(endDate, datetime)
+    assert isinstance(shortTermWindow, timedelta)
+    assert isinstance(longTermWindow, timedelta)
+    uniqueHash = "{}_{}_{}_{}_{}.pickle".format(filename, startDate.timestamp(), endDate.timestamp(), shortTermWindow.total_seconds(), longTermWindow.total_seconds())
+
+    CACHED_DATA_FOLDER = "cache"
+    cacheDataFolderPath = os.path.join(pathlib.Path().resolve(), CACHED_DATA_FOLDER)
+    if not os.path.isdir(cacheDataFolderPath):
+        os.mkdir(cacheDataFolderPath)
+
+    filePath = os.path.join(cacheDataFolderPath, uniqueHash)
+
+    if os.path.isfile(filePath):
+        file = open(filePath, "rb")
+        print("{} loaded from cache".format(uniqueHash))
+        data = pickle.load(file)
+        file.close()
+        return data
+    
+    botcoin = BotCoin(filename)
+    dateRange = endDate-startDate
+    allData = botcoin.fetchData(startDate, dateRange)
+    shortTerm = convertData(allData, startDate, dateRange, shortTermWindow)
+    longTerm = convertData(allData, startDate, dateRange, longTermWindow)
+
+    data = {
+        "short" : shortTerm,
+        "long" : longTerm,
+    }
+    file = open(filePath, "wb")
+    pickle.dump(data, file)
+    file.close()
+    return data
 
 
 def main():
     THREAD_COUNT = os.cpu_count()
     print("I have {} cores".format(THREAD_COUNT))
-    filename = "XMRUSD.csv"
-    botcoin = BotCoin(filename)
+    FILENAME = "XMRUSD.csv"
 
     startingDate = datetime(year=2017, month=4, day=1, hour=0, minute=0, second=0)
-    endingDate = datetime(year=2017, month=5, day=10)
-    dateRange = timedelta(minutes=1)
+    endingDate = datetime(year=2017, month=6, day=10)
+    shortTermWindow = timedelta(hours=1)
+    longTermWindow = timedelta(hours=24)
 
-    dateRange = endingDate-startingDate
-    allData = botcoin.fetchData(startingDate, dateRange)
-    shortTerm = convertData(allData, startingDate, dateRange, timedelta(hours=1))
-    longTerm = convertData(allData, startingDate, dateRange, timedelta(hours=24))
+    data = getData(FILENAME, startingDate, endingDate, shortTermWindow, longTermWindow)
 
-    for x in longTerm:
-        print("L RANGE:", x.date, " - ", x.endDate)
+    # for x in longTerm:
+    #     print("L RANGE:", x.date, " - ", x.endDate)
     # # for x in shortTerm:
     # #     print("S RANGE:", x.date, " - ", x.endDate)
-    result = simulation(startingDate, timedelta(hours=1), endingDate, shortTerm, longTerm, hypothesis.bollingerBandsSafe, Decimal(1_000))
+    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.bollingerBandsSafe, Decimal(1_000))
     print("{}% success".format(result["success"]))    
 
-    simulationPlotter(longTerm, result["valueHistory"], result["leverageHistory"], result["chartingParameters"], result["dateTimeHistory"])
+    simulationPlotter(data["long"], result["valueHistory"], result["leverageHistory"], result["chartingParameters"], result["dateTimeHistory"])
 
     
 if __name__ == "__main__":
