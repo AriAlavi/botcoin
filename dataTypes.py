@@ -123,3 +123,12 @@ def convertData(rawData,givenDate,dateRange,givenWindow):
     map_object = map(DiscreteData, rawDataList, datetimeList, [givenWindow] * len(rawDataList))
     newDataList = list(map_object)
     return newDataList
+
+class ConvertDataMultiProcess:
+    def __init__(self, allData, startDate, dateRange):
+        self.allData = allData
+        self.startDate = startDate
+        self.dateRange = dateRange
+
+    def convertData(self, windowLength):
+        return convertData(self.allData, self.startDate, self.dateRange, windowLength)

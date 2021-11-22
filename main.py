@@ -29,7 +29,7 @@ class RawData:
             DATA_COLLECTION.append(DataPoint(int(row[0]), float(row[1]), float(row[2])))
 
         file.close()
-        print("File {} loaded!".format(self.filename))
+        print("File {} read".format(self.filename))
         return DATA_COLLECTION
     
     def fetchData(self, givenDate, givenWindow):
@@ -318,6 +318,7 @@ def simulationPlotter(longTermData, valueHistory, leverageHistory, chartingParam
     ]
     mpf.plot(mainFrame, type="candle", volume=True, addplot=addplots, main_panel=0, volume_panel=1, num_panels=3)
 
+
 def getData(filename, startDate, endDate, shortTermWindow, longTermWindow):
     assert isinstance(filename, str)
     assert isinstance(startDate, datetime)
@@ -343,8 +344,12 @@ def getData(filename, startDate, endDate, shortTermWindow, longTermWindow):
     botcoin = RawData(filename)
     dateRange = endDate-startDate
     allData = botcoin.fetchData(startDate, dateRange)
-    shortTerm = convertData(allData, startDate, dateRange, shortTermWindow)
-    longTerm = convertData(allData, startDate, dateRange, longTermWindow)
+    print("All data between {} and {} has been fetched.".format(startDate, endDate))
+
+
+    convertDataThread = ConvertDataMultiProcess(allData, startDate, dateRange)
+    p = multiprocessing.Pool(2)
+    shortTerm, longTerm = p.map(convertDataThread.convertData, [shortTermWindow, longTermWindow])
 
     data = {
         "short" : shortTerm,
@@ -374,17 +379,18 @@ def main():
     FILENAME = "XMRUSD.csv"
 
     startingDate = datetime(year=2017, month=1, day=1, hour=0, minute=0, second=0)
-    endingDate = datetime(year=2019, month=1, day=1)
+    endingDate = datetime(year=2017, month=8, day=1)
     shortTermWindow = timedelta(hours=1)
     longTermWindow = timedelta(hours=24)
 
+    import time
+    start = time.time()
     data = getData(FILENAME, startingDate, endingDate, shortTermWindow, longTermWindow)
-
+    print("Took {} seconds".format(time.time() - start))
     # for x in longTerm:
     #     print("L RANGE:", x.date, " - ", x.endDate)
     # # for x in shortTerm:
     # #     print("S RANGE:", x.date, " - ", x.endDate)
-
 
     result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.bollingerBandsSafe, Decimal(1_000))
     print("{}% success".format(result["success"]))    
