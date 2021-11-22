@@ -138,7 +138,7 @@ def convertData(rawData,givenDate,dateRange,givenWindow):
     endDate = givenDate + givenWindow
     endDateInt = int(endDate.timestamp())
     
-    while endDate <= beginDate + dateRange:
+    while givenDate <= beginDate + dateRange:
         sampleData = []
         for transaction in rawData:
             if  givenDate <= datetime.fromtimestamp(transaction.time) <= endDate:
