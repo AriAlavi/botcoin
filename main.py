@@ -90,11 +90,12 @@ def safeMean(input):
 
 
 class DiscreteData:
-    def __init__(self, rawData):
+    def __init__(self, rawData, startDate):
         assert isinstance(rawData, list)
         assert all(isinstance(x, DataPoint) for x in rawData)
+        assert isinstance(startDate, datetime)
 
-    
+        self.date = startDate
 
         self.safeMeanPrice = safeMean([x.price for x in rawData])
         self.safeMeanDeltaPrice = safeMean(getDelta([x.price for x in rawData]))
@@ -117,14 +118,10 @@ class DiscreteData:
             self.minPrice = None
             self.maxPrice = None
 
-            self.startTime = None
-            self.endTime = None
         else:
             self.minPrice = min(x.price for x in rawData)
             self.maxPrice = max(x.price for x in rawData)
 
-            self.startTime = min(x.time for x in rawData)
-            self.endTime = max(x.time for x in rawData)
 
         self.transactions = len(rawData)
 
@@ -136,6 +133,7 @@ def convertData(rawData,givenDate,dateRange,givenWindow):
     assert isinstance(givenWindow,timedelta)
     
     rawDataList = []
+    datetimeList = []
     beginDate = givenDate
     endDate = givenDate + givenWindow
     endDateInt = int(endDate.timestamp())
@@ -151,10 +149,11 @@ def convertData(rawData,givenDate,dateRange,givenWindow):
         rawData = list(set(rawData) - set(sampleData))
         rawDataList.append(sampleData)
         givenDate = endDate
+        datetimeList.append(givenDate)
         endDate = endDate + givenWindow
     
 
-    map_object = map(DiscreteData, rawDataList)
+    map_object = map(DiscreteData, rawDataList, datetimeList)
     newDataList = list(map_object)
     return newDataList
 
@@ -223,6 +222,7 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
     LEVERAGE_HISTORY = []
 
     now = startingDate
+
     while now <= endingDate:
         print("It is {}".format(now))
 
