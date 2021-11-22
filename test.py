@@ -1,4 +1,6 @@
 from main import *
+from dataTypes import *
+
 from datetime import datetime, timedelta
 from decimal import Decimal
 from main import convertData, BotCoin
