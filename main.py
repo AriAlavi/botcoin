@@ -8,6 +8,9 @@ import pathlib
 import os
 
 import numpy as np
+import matplotlib.pyplot as plt
+import mplfinance as mpf
+import pandas as pd
 
 
 from dataTypes import *
@@ -219,9 +222,6 @@ def simulationPlotter(longTermData, valueHistory, leverageHistory, chartingParam
     assert isinstance(valueHistory, list)
     assert isinstance(leverageHistory, list)
     assert isinstance(chartingParameters, dict)
-    import matplotlib.pyplot as plt
-    import mplfinance as mpf
-    import pandas as pd
 
     assert len(valueHistory) == len(leverageHistory)
     assert len(leverageHistory) == len(dateHistory)
