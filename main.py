@@ -373,6 +373,13 @@ class HypothesisTester:
         assert callable(hypothesis)
         return simulation(self.startingDate, self.shortTermWindow, self.endingDate, self.shortTermData, self.longTermData, hypothesis, self.startingCash)["success"]
 
+def DataFrame(data):
+    short = pd.DataFrame([val.__dict__ for val in data['short']])
+    long = pd.DataFrame([val.__dict__ for val in data['long']])  
+    with pd.ExcelWriter('discretedata.xlsx') as writer:  
+        short.to_excel(writer, sheet_name='short')
+        long.to_excel(writer, sheet_name='long')
+
 def main():
     THREAD_COUNT = os.cpu_count()
     print("I have {} cores".format(THREAD_COUNT))
@@ -386,6 +393,7 @@ def main():
     import time
     start = time.time()
     data = getData(FILENAME, startingDate, endingDate, shortTermWindow, longTermWindow)
+    DataFrame(data)
     print("Took {} seconds".format(time.time() - start))
     # for x in longTerm:
     #     print("L RANGE:", x.date, " - ", x.endDate)
