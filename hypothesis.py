@@ -67,8 +67,15 @@ def bollingerBandsSafe(shortTerm, longTerm, cash, botcoins, customParameters, ch
 
     currentPrice = shortTerm.safeMeanPrice
 
-    movingAveragePrice = mean([x.safeMeanPrice for x in history if x.safeMeanPrice])
-    movingAverageStdev = stdev([x.safeMeanPrice for x in history if x.safeMeanPrice])
+    try:
+        movingAveragePrice = mean([x.safeMeanPrice for x in history if x.safeMeanPrice])
+        movingAverageStdev = stdev([x.safeMeanPrice for x in history if x.safeMeanPrice])
+    except:
+        chartingParameters["lowerBound"] = None
+        chartingParameters["upperBound"] = None
+        return lastLeverage
+
+
     upperBound = movingAveragePrice + (movingAverageStdev * BOLLINGER_NUMBER_OF_STDEV)
     lowerBound = movingAveragePrice - (movingAverageStdev * BOLLINGER_NUMBER_OF_STDEV)
 

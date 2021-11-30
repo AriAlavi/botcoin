@@ -32,13 +32,13 @@ class DiscreteData:
         assert isinstance(startDate, datetime)
         assert isinstance(timestep, timedelta)
 
-        # safeMean = DiscreteData.safeMean
+        safeMean = DiscreteData.safeMean
         # getDelta = DiscreteData.getDelta
 
         self.date = startDate
         self.endDate = self.date + timestep
 
-        # self.safeMeanPrice = safeMean([x.price for x in rawData])
+        self.safeMeanPrice = safeMean([x.price for x in rawData])
         # self.safeMeanDeltaPrice = safeMean(getDelta([x.price for x in rawData]))
         # self.safeMeanDeltaDeltaPrice = safeMean(getDelta(getDelta([x.price for x in rawData])))
 
