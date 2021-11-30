@@ -33,27 +33,27 @@ class DiscreteData:
         assert isinstance(timestep, timedelta)
 
         safeMean = DiscreteData.safeMean
-        getDelta = DiscreteData.getDelta
+        # getDelta = DiscreteData.getDelta
 
         self.date = startDate
         self.endDate = self.date + timestep
 
         self.safeMeanPrice = safeMean([x.price for x in rawData])
-        self.safeMeanDeltaPrice = safeMean(getDelta([x.price for x in rawData]))
+        # self.safeMeanDeltaPrice = safeMean(getDelta([x.price for x in rawData]))
         # self.safeMeanDeltaDeltaPrice = safeMean(getDelta(getDelta([x.price for x in rawData])))
 
         self.volume = sum(x.quantity for x in rawData)
 
-        self.safeMeanVolumePerTransaction = safeMean([x.quantity for x in rawData])
-        self.safeMeanDeltaVolumePerTransaction = safeMean(getDelta([x.quantity for x in rawData]))
+        # self.safeMeanVolumePerTransaction = safeMean([x.quantity for x in rawData])
+        # self.safeMeanDeltaVolumePerTransaction = safeMean(getDelta([x.quantity for x in rawData]))
         # self.safeMeanDeltaDeltaVolumePerTransaction = safeMean(getDelta(getDelta([x.quantity for x in rawData])))
 
-        if len(rawData) < 2:
-            self.priceStdev = None
-            self.volumeStdev = None
-        else:
-            self.priceStdev = stdev(x.price for x in rawData)
-            self.volumeStdev = stdev(x.quantity for x in rawData)
+        # if len(rawData) < 2:
+        #     self.priceStdev = None
+        #     self.volumeStdev = None
+        # else:
+        #     self.priceStdev = stdev(x.price for x in rawData)
+        #     self.volumeStdev = stdev(x.quantity for x in rawData)
 
         if len(rawData) < 1:
             self.low = None
@@ -91,38 +91,70 @@ class DiscreteData:
             deltaList.append(delta)
         return deltaList
 
+
 def convertData(rawData,givenDate,dateRange,givenWindow):
     assert isinstance(rawData, list)
     assert all(isinstance(x, DataPoint) for x in rawData)
     assert isinstance(givenDate, datetime)
     assert isinstance(dateRange,timedelta)
     assert isinstance(givenWindow,timedelta)
-    
-    rawDataList = []
+
+    endDate = givenDate + dateRange
+
+    currentDate = givenDate
+
+    rawDataIndex = 0
+    rawDataSplit = []
     datetimeList = []
-    beginDate = givenDate
-    endDate = givenDate + givenWindow
-    endDateInt = int(endDate.timestamp())
-    datetimeList.append(givenDate)
+    while currentDate < endDate:
+        currentDateInt = int(currentDate.timestamp())
+        currentWindowRawData = []
+        currentData = rawData[rawDataIndex]
+        while currentData.time <= currentDateInt:
+            currentWindowRawData.append(currentData)
+            rawDataIndex += 1
+            currentData = rawData[rawDataIndex]
+
+        rawDataSplit.append(currentWindowRawData)
+        datetimeList.append(currentDate)
+        currentDate += givenWindow
+
+    map_object = map(DiscreteData, rawDataSplit, datetimeList, [givenWindow] * len(rawDataSplit))
+    return list(map_object)
+
+
+# def convertData(rawData,givenDate,dateRange,givenWindow):
+#     assert isinstance(rawData, list)
+#     assert all(isinstance(x, DataPoint) for x in rawData)
+#     assert isinstance(givenDate, datetime)
+#     assert isinstance(dateRange,timedelta)
+#     assert isinstance(givenWindow,timedelta)
     
-    while givenDate < beginDate + dateRange:
-        sampleData = []
-        for transaction in rawData:
-            if  givenDate <= datetime.fromtimestamp(transaction.time) <= endDate:
-                sampleData.append(transaction)
-            if transaction.time > endDateInt:
-                continue
+#     rawDataList = []
+#     datetimeList = []
+#     beginDate = givenDate
+#     endDate = givenDate + givenWindow
+#     endDateInt = int(endDate.timestamp())
+#     datetimeList.append(givenDate)
+    
+#     while givenDate < beginDate + dateRange:
+#         sampleData = []
+#         for transaction in rawData:
+#             if  givenDate <= datetime.fromtimestamp(transaction.time) <= endDate:
+#                 sampleData.append(transaction)
+#             if transaction.time > endDateInt:
+#                 continue
         
-        rawData = list(set(rawData) - set(sampleData))
-        rawDataList.append(sampleData)
-        givenDate = endDate
-        datetimeList.append(givenDate)
-        endDate = endDate + givenWindow
+#         rawData = list(set(rawData) - set(sampleData))
+#         rawDataList.append(sampleData)
+#         givenDate = endDate
+#         datetimeList.append(givenDate)
+#         endDate = endDate + givenWindow
     
 
-    map_object = map(DiscreteData, rawDataList, datetimeList, [givenWindow] * len(rawDataList))
-    newDataList = list(map_object)
-    return newDataList
+#     map_object = map(DiscreteData, rawDataList, datetimeList, [givenWindow] * len(rawDataList))
+#     newDataList = list(map_object)
+#     return newDataList
 
 class ConvertDataMultiProcess:
     def __init__(self, allData, startDate, dateRange):
