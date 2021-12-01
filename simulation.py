@@ -7,6 +7,40 @@ import matplotlib.pyplot as plt
 import mplfinance as mpf
 import pandas as pd
 
+class RawData:
+    def __init__(self, filename):
+        self.filename = filename
+        self.data = self.readFile()
+
+    def readFile(self):
+        assert isinstance(self.filename, str)
+        file = open(self.filename)
+        reader = csv.reader(file)
+        i = 0
+        DATA_COLLECTION = []
+        for row in reader:
+            DATA_COLLECTION.append(DataPoint(int(row[0]), float(row[1]), float(row[2])))
+
+        file.close()
+        print("File {} read".format(self.filename))
+        return DATA_COLLECTION
+    
+    def fetchData(self, givenDate, givenWindow):
+        assert isinstance(givenDate, datetime)
+        assert isinstance(givenWindow, timedelta)
+        FETCHED_DATA = []
+
+        endDate = givenDate + givenWindow
+        endDateInt = int(endDate.timestamp())
+        
+        for transaction in self.data:
+            if  givenDate <= datetime.fromtimestamp(transaction.time) <= endDate:
+                FETCHED_DATA.append(transaction)
+            if transaction.time > endDateInt:
+                break
+
+        return FETCHED_DATA
+
 def setLeverage(myCash, myCoins, coinPrice, soughtLeverage):
     assert isinstance(myCash, Decimal)
     assert isinstance(myCoins, Decimal)
