@@ -25,6 +25,7 @@ class DataPoint:
     def __repr__(self):
         return str(self)
 
+
 class DiscreteData:
     def __init__(self, rawData, startDate, timestep):
         assert isinstance(rawData, list)
@@ -33,28 +34,13 @@ class DiscreteData:
         assert isinstance(timestep, timedelta)
 
         safeMean = DiscreteData.safeMean
-        # getDelta = DiscreteData.getDelta
 
         self.date = startDate
         self.endDate = self.date + timestep
 
         self.safeMeanPrice = safeMean([x.price for x in rawData])
-        # self.safeMeanDeltaPrice = safeMean(getDelta([x.price for x in rawData]))
-        # self.safeMeanDeltaDeltaPrice = safeMean(getDelta(getDelta([x.price for x in rawData])))
-
         self.volume = sum(x.quantity for x in rawData)
-
-        # self.safeMeanVolumePerTransaction = safeMean([x.quantity for x in rawData])
-        # self.safeMeanDeltaVolumePerTransaction = safeMean(getDelta([x.quantity for x in rawData]))
-        # self.safeMeanDeltaDeltaVolumePerTransaction = safeMean(getDelta(getDelta([x.quantity for x in rawData])))
-
-        # if len(rawData) < 2:
-        #     self.priceStdev = None
-        #     self.volumeStdev = None
-        # else:
-        #     self.priceStdev = stdev(x.price for x in rawData)
-        #     self.volumeStdev = stdev(x.quantity for x in rawData)
-
+        
         if len(rawData) < 1:
             self.low = None
             self.high = None
@@ -79,17 +65,6 @@ class DiscreteData:
             return input[0]
         else:
             return mean(input)
-
-    @staticmethod
-    def getDelta(givenList):
-        assert isinstance(givenList, list)
-        deltaList = []
-        if len(givenList) <= 1:
-            return deltaList
-        for i in range(1, len(givenList)):
-            delta = givenList[i] - givenList[i-1]
-            deltaList.append(delta)
-        return deltaList
 
 
 def convertData(rawData,givenDate,dateRange,givenWindow):

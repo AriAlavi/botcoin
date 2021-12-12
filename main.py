@@ -165,14 +165,14 @@ def main():
     # # for x in shortTerm:
     # #     print("S RANGE:", x.date, " - ", x.endDate)
 
-    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.bollingerBandsSafe, Decimal(1_000))
+    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.equationMethod, Decimal(1_000))
     print("{}% success".format(result["success"]))    
     simulationPlotter(data["long"], result["valueHistory"], result["leverageHistory"], result["chartingParameters"], result["dateTimeHistory"])
 
 
     # hypothesisTester = HypothesisTester(startingDate, shortTermWindow, endingDate, data["short"], data["long"], Decimal(1_000)).testHypothesis
 
-    # inputList = np.arange(.01, 1, .01)
+    # inputList = np.arange(.05, 3, .05)
     # hypothesisList = [hypothesis.HypothesisVariation(hypothesis.bollingerBandsSafe, bollinger_number_of_stdev=i).hypothesis for i in inputList]
 
     # pool = multiprocessing.Pool(THREAD_COUNT)
