@@ -2,6 +2,9 @@ from datetime import timedelta, datetime
 from decimal import Decimal
 from dataTypes import *
 
+
+import os, pickle, pathlib, csv, multiprocessing
+
 import numpy as np
 import matplotlib.pyplot as plt
 import mplfinance as mpf
@@ -83,6 +86,48 @@ def setLeverage(myCash, myCoins, coinPrice, soughtLeverage):
         "cash" : newCash,
         "coins" : newCoins
     }
+
+
+def getData(filename, startDate, endDate, shortTermWindow, longTermWindow):
+    assert isinstance(filename, str)
+    assert isinstance(startDate, datetime)
+    assert isinstance(endDate, datetime)
+    assert isinstance(shortTermWindow, timedelta)
+    assert isinstance(longTermWindow, timedelta)
+    uniqueHash = "{}_{}_{}_{}_{}.pickle".format(filename, startDate.timestamp(), endDate.timestamp(), shortTermWindow.total_seconds(), longTermWindow.total_seconds())
+
+    CACHED_DATA_FOLDER = "cache"
+    cacheDataFolderPath = os.path.join(pathlib.Path().resolve(), CACHED_DATA_FOLDER)
+    if not os.path.isdir(cacheDataFolderPath):
+        os.mkdir(cacheDataFolderPath)
+
+    filePath = os.path.join(cacheDataFolderPath, uniqueHash)
+
+    if os.path.isfile(filePath):
+        file = open(filePath, "rb")
+        print("{} loaded from cache".format(uniqueHash))
+        data = pickle.load(file)
+        file.close()
+        return data
+    
+    botcoin = RawData(filename)
+    dateRange = endDate-startDate
+    allData = botcoin.fetchData(startDate, dateRange)
+    print("All data between {} and {} has been fetched.".format(startDate, endDate))
+
+
+    convertDataThread = ConvertDataMultiProcess(allData, startDate, dateRange)
+    p = multiprocessing.Pool(2)
+    shortTerm, longTerm = p.map(convertDataThread.convertData, [shortTermWindow, longTermWindow])
+
+    data = {
+        "short" : shortTerm,
+        "long" : longTerm,
+    }
+    file = open(filePath, "wb")
+    pickle.dump(data, file)
+    file.close()
+    return data
 
 def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData, hypothesisFunc, startingCash):
     assert isinstance(startingDate, datetime) # Should be the exact same starting date as the short term and long term data
@@ -305,3 +350,59 @@ def simulationPlotter(longTermData, valueHistory, leverageHistory, chartingParam
         mpf.make_addplot(valueFrame, type="line", panel=2, ylabel="Value"),
     ]
     mpf.plot(mainFrame, type="candle", volume=True, addplot=addplots, main_panel=0, volume_panel=1, num_panels=3)
+
+def mapRunner(givenArg):
+    return givenArg()
+
+def hypothesisTester(FILENAME, hypothesis):
+    THREAD_COUNT = os.cpu_count()
+    print("I have {} cores".format(THREAD_COUNT))
+
+
+    shortTermWindow = timedelta(hours=1)
+    longTermWindow = timedelta(hours=24)
+
+    DATERANGES = [
+        (datetime( month=6, day=18, year=2020), datetime(month=1, day=11, year=2021)), # good
+        (datetime( month=1, day=1, year=2017), datetime(month=6, day=21, year=2018)), #good 
+        (datetime( month=12, day=1, year=2018), datetime(month=7, day=21, year=2019)), #good 
+        (datetime( month=6, day=21, year=2018), datetime(month=11, day=11, year=2018)), #neutral
+        (datetime( month=1, day=24, year=2020), datetime(month=7, day=6, year=2020)), #neutral
+        (datetime( month=10, day=19, year=2017), datetime(month=8, day=15, year=2018)), #even
+        (datetime( month=11, day=1, year=2018), datetime(month=4, day=20, year=2020)), #even
+        (datetime( month=12, day=8, year=2017), datetime(month=12, day=30, year=2019)), #bad 
+        (datetime( month=2, day=13, year=2021), datetime(month=7, day=25, year=2021)), #bad
+        (datetime( month=8, day=26, year=2017), datetime(month=12, day=28, year=2018)), #bad
+    ] 
+
+    hypothesisList = []
+    for x, y in DATERANGES:
+        data = getData(FILENAME, x, y, shortTermWindow, longTermWindow)
+        stupid = HypothesisTester(x, shortTermWindow, y, data["short"], data["long"], Decimal(1_000), hypothesis)
+        hypothesisList.append(stupid)
+
+    hypothesisList = [x.run for x in hypothesisList]
+    p = multiprocessing.Pool(THREAD_COUNT)
+    resultsList = list(p.map(mapRunner, hypothesisList))
+
+
+    # for x in hypothesisList:
+    #     resultsList.append(x(hypothesis))
+
+    # htmap = map(hypothesisList, staticHypothesisList)
+    # htlist = list(htmap)
+    # print(htmap)
+    # htlist = list(htmap)
+    return mean(resultsList)
+class HypothesisTester:
+    def __init__ (self, startingDate, timeSteps, endingDate, shortTermData, longtermData, startingCash, hypothesis):
+        self.startingDate = startingDate
+        self.timeSteps = timeSteps
+        self.endingDate = endingDate
+        self.shortTermData = shortTermData
+        self.longtermData = longtermData
+        self.startingCash = startingCash
+        self.hypothesis = hypothesis
+    def run(self):
+        return simulation(self.startingDate, self.timeSteps, self.endingDate, self.shortTermData, self.longtermData, self.hypothesis, self.startingCash).get('success')
+    

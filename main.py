@@ -12,48 +12,9 @@ from simulation import *
 import hypothesis
 
 
-def getData(filename, startDate, endDate, shortTermWindow, longTermWindow):
-    assert isinstance(filename, str)
-    assert isinstance(startDate, datetime)
-    assert isinstance(endDate, datetime)
-    assert isinstance(shortTermWindow, timedelta)
-    assert isinstance(longTermWindow, timedelta)
-    uniqueHash = "{}_{}_{}_{}_{}.pickle".format(filename, startDate.timestamp(), endDate.timestamp(), shortTermWindow.total_seconds(), longTermWindow.total_seconds())
-
-    CACHED_DATA_FOLDER = "cache"
-    cacheDataFolderPath = os.path.join(pathlib.Path().resolve(), CACHED_DATA_FOLDER)
-    if not os.path.isdir(cacheDataFolderPath):
-        os.mkdir(cacheDataFolderPath)
-
-    filePath = os.path.join(cacheDataFolderPath, uniqueHash)
-
-    if os.path.isfile(filePath):
-        file = open(filePath, "rb")
-        print("{} loaded from cache".format(uniqueHash))
-        data = pickle.load(file)
-        file.close()
-        return data
-    
-    botcoin = RawData(filename)
-    dateRange = endDate-startDate
-    allData = botcoin.fetchData(startDate, dateRange)
-    print("All data between {} and {} has been fetched.".format(startDate, endDate))
 
 
-    convertDataThread = ConvertDataMultiProcess(allData, startDate, dateRange)
-    p = multiprocessing.Pool(2)
-    shortTerm, longTerm = p.map(convertDataThread.convertData, [shortTermWindow, longTermWindow])
-
-    data = {
-        "short" : shortTerm,
-        "long" : longTerm,
-    }
-    file = open(filePath, "wb")
-    pickle.dump(data, file)
-    file.close()
-    return data
-
-class HypothesisTester:
+class HypothesisTesterStupid:
     def __init__(self, startingDate, shortTermWindow, endingDate, shortTermData, longTermData, startingCash):
         self.startingDate = startingDate
         self.shortTermWindow = shortTermWindow
@@ -149,25 +110,28 @@ def main():
     THREAD_COUNT = os.cpu_count()
     print("I have {} cores".format(THREAD_COUNT))
     FILENAME = "XMRUSD.csv"
+    print(hypothesis)
+    print(hypothesisTester(FILENAME, hypothesis.hold))
+    
 
-    startingDate = datetime(year=2017, month=1, day=1, hour=0, minute=0, second=0)
-    endingDate = datetime(year=2017, month=8, day=1)
-    shortTermWindow = timedelta(hours=1)
-    longTermWindow = timedelta(hours=24)
+    # startingDate = datetime(year=2017, month=1, day=1, hour=0, minute=0, second=0)
+    # endingDate = datetime(year=2017, month=8, day=1)
+    # shortTermWindow = timedelta(hours=1)
+    # longTermWindow = timedelta(hours=24)
 
-    import time
-    start = time.time()
-    data = getData(FILENAME, startingDate, endingDate, shortTermWindow, longTermWindow)
-    # shortdf,longdf = DataFrame(data)
-    print("Took {} seconds".format(time.time() - start))
+    # import time
+    # start = time.time()
+    # data = getData(FILENAME, startingDate, endingDate, shortTermWindow, longTermWindow)
+    # # shortdf,longdf = DataFrame(data)
+    # print("Took {} seconds".format(time.time() - start))
     # for x in longTerm:
     #     print("L RANGE:", x.date, " - ", x.endDate)
     # # for x in shortTerm:
     # #     print("S RANGE:", x.date, " - ", x.endDate)
 
-    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.equationMethod, Decimal(1_000))
-    print("{}% success".format(result["success"]))    
-    simulationPlotter(data["long"], result["valueHistory"], result["leverageHistory"], result["chartingParameters"], result["dateTimeHistory"])
+    # result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.bollingerBandsSafe, Decimal(1_000))
+    # print("{}% success".format(result["success"]))    
+    # simulationPlotter(data["long"], result["valueHistory"], result["leverageHistory"], result["chartingParameters"], result["dateTimeHistory"])
 
 
     # hypothesisTester = HypothesisTester(startingDate, shortTermWindow, endingDate, data["short"], data["long"], Decimal(1_000)).testHypothesis

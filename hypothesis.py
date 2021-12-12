@@ -193,7 +193,7 @@ class HypothesisVariation:
         assert callable(function)
         self.kwargs = kwargs
 
-    def hypothesis(self, shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters):
+    def run(self, shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters):
         return bollingerBandsSafe(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters, **self.kwargs)
 
 
