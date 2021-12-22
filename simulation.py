@@ -244,6 +244,7 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
     # print(CURRENT_ASSETS)
     return {
         "success" : ((CURRENT_ASSETS - startingCash) / startingCash) * 100,
+        "averageLeverage" : mean(LEVERAGE_HISTORY),
         "valueHistory" : VALUE_HISTORY,
         "leverageHistory" : LEVERAGE_HISTORY,
         "chartingParameters" : CHARTING_PARAMETERS_HISTORY,
@@ -255,7 +256,7 @@ def simulationPlotter(longTermData, simulationData):
     valueHistory = simulationData["valueHistory"]
     leverageHistory = simulationData["leverageHistory"]
     chartingParameters = simulationData["chartingParameters"]
-    dateHistory = simulationData["dateHistory"]
+    dateHistory = simulationData["dateTimeHistory"]
     assert isinstance(longTermData, list)
     assert isinstance(valueHistory, list)
     assert isinstance(leverageHistory, list)

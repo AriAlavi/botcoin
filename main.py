@@ -129,14 +129,14 @@ def main():
     # #     print("S RANGE:", x.date, " - ", x.endDate)
 
     result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.equationMethod, Decimal(1_000))
-    print("{}% success".format(result["success"]))    
+    # print("{}% success".format(result["success"]))    
     simulationPlotter(data["long"], result)
+    # print(hypothesisTester(FILENAME, hypothesis.hold))
 
+    # hypothesisTester = HypothesisTester(startingDate, shortTermWindow, endingDate, data["short"], data["long"], Decimal(1_000)).testHypothesis
 
-    hypothesisTester = HypothesisTester(startingDate, shortTermWindow, endingDate, data["short"], data["long"], Decimal(1_000)).testHypothesis
-
-    inputList = np.arange(.05, 3, .05)
-    hypothesisList = [hypothesis.HypothesisVariation(hypothesis.bollingerBandsSafe, bollinger_number_of_stdev=i).hypothesis for i in inputList]
+    # inputList = np.arange(.05, 3, .05)
+    # hypothesisList = [hypothesis.HypothesisVariation(hypothesis.bollingerBandsSafe, bollinger_number_of_stdev=i).hypothesis for i in inputList]
 
     # pool = multiprocessing.Pool(THREAD_COUNT)
     # results = pool.map(hypothesisTester, hypothesisList)
