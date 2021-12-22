@@ -2,6 +2,7 @@ from dataTypes import *
 from decimal import Decimal
 from math import sin, cos, sqrt
 from scipy.stats import linregress
+import numpy as np
 
 def randomChoice(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters):
     assert isinstance(shortTerm, DiscreteData)
@@ -32,6 +33,9 @@ def bounce(shortTerm, longTerm, cash, botcoins, customParameters, chartingParame
 def hold(*args):
     return Decimal(1)
 
+
+def mse(a, b):
+    return np.sqrt(np.sum((np.array([x-y for x, y in zip(a, b)]))**2))
 
 def equationMethod(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters, **kwargs):
     assert isinstance(shortTerm, DiscreteData)
@@ -107,11 +111,16 @@ def equationMethod(shortTerm, longTerm, cash, botcoins, customParameters, charti
     longTermDeltas = getDelta(longTermPrices)
     if len(longTermDeltas) == 0:
         chartingParameters["test"] = None
+        chartingParameters["mse"] = None
         return Decimal(0)
 
     slope, intercept, r_value, p_value, std_err = linregress(range(0, len(longTermPrices)), longTermPrices)
     shortTermDeltas = getDelta(shortTermPrices)
     chartingParameters["test"] = r_value**2
+    differences = np.array([1] * len(longTermPrices)) - np.array(longTermPrices)
+    squared_array = np.square(differences)
+    error = mse([1] * len(longTermPrices), longTermPrices)
+    chartingParameters["mse"] = error/max(x for x in longTermPrices)
     return Decimal(r_value**2)
 
 

@@ -39,19 +39,22 @@ class DiscreteData:
         self.endDate = self.date + timestep
 
         self.safeMeanPrice = safeMean([x.price for x in rawData])
+        self.meanPrice = self.safeMeanPrice
         self.volume = sum(x.quantity for x in rawData)
-        
+
         if len(rawData) < 1:
             self.low = None
             self.high = None
             self.open = None
             self.close = None
+            self.price = None
 
         else:
             self.low = min(x.price for x in rawData)
             self.high = max(x.price for x in rawData)
             self.open= rawData[0].price
             self.close = rawData[-1].price
+            self.price = (self.low + self.high + self.open + self.close)/4
 
 
         self.transactions = len(rawData)

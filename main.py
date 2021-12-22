@@ -110,18 +110,17 @@ def main():
     THREAD_COUNT = os.cpu_count()
     print("I have {} cores".format(THREAD_COUNT))
     FILENAME = "XMRUSD.csv"
-    print(hypothesis)
-    print(hypothesisTester(FILENAME, hypothesis.hold))
+    # print(hypothesisTester(FILENAME, hypothesis.equationMethod))
     
 
-    # startingDate = datetime(year=2017, month=1, day=1, hour=0, minute=0, second=0)
-    # endingDate = datetime(year=2017, month=8, day=1)
-    # shortTermWindow = timedelta(hours=1)
-    # longTermWindow = timedelta(hours=24)
+    startingDate = datetime(year=2017, month=1, day=1, hour=0, minute=0, second=0)
+    endingDate = datetime(year=2018, month=8, day=1)
+    shortTermWindow = timedelta(hours=1)
+    longTermWindow = timedelta(hours=24)
 
     # import time
     # start = time.time()
-    # data = getData(FILENAME, startingDate, endingDate, shortTermWindow, longTermWindow)
+    data = getData(FILENAME, startingDate, endingDate, shortTermWindow, longTermWindow)
     # # shortdf,longdf = DataFrame(data)
     # print("Took {} seconds".format(time.time() - start))
     # for x in longTerm:
@@ -129,15 +128,15 @@ def main():
     # # for x in shortTerm:
     # #     print("S RANGE:", x.date, " - ", x.endDate)
 
-    # result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.bollingerBandsSafe, Decimal(1_000))
-    # print("{}% success".format(result["success"]))    
-    # simulationPlotter(data["long"], result["valueHistory"], result["leverageHistory"], result["chartingParameters"], result["dateTimeHistory"])
+    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.equationMethod, Decimal(1_000))
+    print("{}% success".format(result["success"]))    
+    simulationPlotter(data["long"], result)
 
 
-    # hypothesisTester = HypothesisTester(startingDate, shortTermWindow, endingDate, data["short"], data["long"], Decimal(1_000)).testHypothesis
+    hypothesisTester = HypothesisTester(startingDate, shortTermWindow, endingDate, data["short"], data["long"], Decimal(1_000)).testHypothesis
 
-    # inputList = np.arange(.05, 3, .05)
-    # hypothesisList = [hypothesis.HypothesisVariation(hypothesis.bollingerBandsSafe, bollinger_number_of_stdev=i).hypothesis for i in inputList]
+    inputList = np.arange(.05, 3, .05)
+    hypothesisList = [hypothesis.HypothesisVariation(hypothesis.bollingerBandsSafe, bollinger_number_of_stdev=i).hypothesis for i in inputList]
 
     # pool = multiprocessing.Pool(THREAD_COUNT)
     # results = pool.map(hypothesisTester, hypothesisList)

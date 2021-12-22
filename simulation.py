@@ -250,7 +250,12 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
         "dateTimeHistory" : DATETIME_HISTORY,
     }
        
-def simulationPlotter(longTermData, valueHistory, leverageHistory, chartingParameters, dateHistory):
+def simulationPlotter(longTermData, simulationData):
+    assert isinstance(simulationData, dict)
+    valueHistory = simulationData["valueHistory"]
+    leverageHistory = simulationData["leverageHistory"]
+    chartingParameters = simulationData["chartingParameters"]
+    dateHistory = simulationData["dateHistory"]
     assert isinstance(longTermData, list)
     assert isinstance(valueHistory, list)
     assert isinstance(leverageHistory, list)
