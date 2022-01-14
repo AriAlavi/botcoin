@@ -151,13 +151,20 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
     LEVERAGE_HISTORY = []
     DATETIME_HISTORY = []
     CHARTING_PARAMETERS_HISTORY = {}
+    BOTCOIN_HELD = 0            
+    NUMBER_OF_BUYS = 0           
+    NUMBER_OF_SEllS = 0  
+    ITERATIONS = 0
+    ITERATIONS_WITH_BOTCOINS = 0
+
+    
 
     now = startingDate
     
 
     MAX_SHORT_TERM_INDEX = len(shortTermData) - 1
     MAX_LONG_TERM_INDEX = len(longtermData) - 1
-    shortTermIndex = -2
+    shortTermIndex = -2   
     longTermIndex = 0
 
     LONG_TERM_BEGINS = longtermData[longTermIndex].endDate
@@ -221,12 +228,28 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
                 # print("Epsilon problem encountered for botcoins: {}".format(BOTCOINS))
                 BOTCOINS = Decimal(0)
 
+        if BOTCOIN_HELD < BOTCOINS: 
+            NUMBER_OF_BUYS += 1
+
+        if BOTCOIN_HELD > BOTCOINS:
+            NUMBER_OF_SEllS += 1
+
+        if BOTCOIN_HELD > 0:
+            ITERATIONS_WITH_BOTCOINS += 1
+
+
+            
+        ITERATIONS += 1
+
         CURRENT_ASSETS = BOTCOINS * BOTCOIN_PRICE
         CURRENT_ASSETS += CASH
 
         VALUE_HISTORY.append(CURRENT_ASSETS)
         LEVERAGE_HISTORY.append(soughtLeverage)
         DATETIME_HISTORY.append(now)
+        BOTCOIN_HELD = BOTCOINS 
+
+
 
         # Print the state START
 
@@ -249,6 +272,9 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
         "leverageHistory" : LEVERAGE_HISTORY,
         "chartingParameters" : CHARTING_PARAMETERS_HISTORY,
         "dateTimeHistory" : DATETIME_HISTORY,
+        "numberOfBuys" : NUMBER_OF_BUYS, 
+        "numberOfSells" : NUMBER_OF_SEllS, 
+        "marketRisk" : (ITERATIONS_WITH_BOTCOINS/ITERATIONS) * 100,
     }
        
 def simulationPlotter(longTermData, simulationData):
