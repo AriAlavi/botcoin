@@ -2,8 +2,24 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from tracemalloc import start
 import urllib.request
+import progressbar
 
-from numpy import isin
+
+pbar = None
+
+
+def show_progress(block_num, block_size, total_size):
+    global pbar
+    if pbar is None:
+        pbar = progressbar.ProgressBar(maxval=total_size)
+        pbar.start()
+
+    downloaded = block_num * block_size
+    if downloaded < total_size:
+        pbar.update(downloaded)
+    else:
+        pbar.finish()
+        pbar = None
 
 def generateLinks(startDate, endDate):
     assert isinstance(startDate, datetime)
@@ -22,7 +38,7 @@ def downloadFromLink(givenLink, filename):
     assert "http" in givenLink
 
     print(f"Downloading from '{givenLink}'...")
-    urllib.request.urlretrieve(givenLink, filename)
+    urllib.request.urlretrieve(givenLink, filename, show_progress)
     print(f"Download from '{givenLink}' complete.")
     # with urllib.request.urlopen(givenLink) as f:
     #     html = f.read().decode('utf-8')
