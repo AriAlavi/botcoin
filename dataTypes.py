@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from statistics import median, mean, stdev
 
+from numpy import isin
+
 class DataPoint:
     def __init__(self, time, price, quantity):
         assert isinstance(time, int)
@@ -59,6 +61,12 @@ class DiscreteData:
 
         self.transactions = len(rawData)
 
+    def __str__(self):
+        return str(self.date)
+
+    def __repr__(self):
+        return str(self)
+
     @staticmethod
     def safeMean(input):
         assert isinstance(input, list)
@@ -70,35 +78,39 @@ class DiscreteData:
             return mean(input)
 
 
+
+
 def convertData(rawData,givenDate,dateRange,givenWindow):
     assert isinstance(rawData, list)
     assert all(isinstance(x, DataPoint) for x in rawData)
     assert isinstance(givenDate, datetime)
     assert isinstance(dateRange,timedelta)
     assert isinstance(givenWindow,timedelta)
-
+    print(givenDate, dateRange)
     endDate = givenDate + dateRange
 
     currentDate = givenDate
-
+    createdDiscreteData = []
     rawDataIndex = 0
-    rawDataSplit = []
-    datetimeList = []
+    startDateInt = int(givenDate.timestamp())
     while currentDate < endDate:
         currentDateInt = int(currentDate.timestamp())
         currentWindowRawData = []
         currentData = rawData[rawDataIndex]
         while currentData.time <= currentDateInt:
+            # print(currentData.time, startDateInt, currentData.time > startDateInt)
+            # if currentData.time >= startDateInt:
             currentWindowRawData.append(currentData)
+
             rawDataIndex += 1
             currentData = rawData[rawDataIndex]
 
-        rawDataSplit.append(currentWindowRawData)
-        datetimeList.append(currentDate)
+        createdObj = DiscreteData(currentWindowRawData, currentDate, givenWindow)
+        createdDiscreteData.append(createdObj)
         currentDate += givenWindow
+        
 
-    map_object = map(DiscreteData, rawDataSplit, datetimeList, [givenWindow] * len(rawDataSplit))
-    return list(map_object)
+    return createdDiscreteData
 
 
 # def convertData(rawData,givenDate,dateRange,givenWindow):
@@ -134,11 +146,46 @@ def convertData(rawData,givenDate,dateRange,givenWindow):
 #     newDataList = list(map_object)
 #     return newDataList
 
-class ConvertDataMultiProcess:
-    def __init__(self, allData, startDate, dateRange):
-        self.allData = allData
-        self.startDate = startDate
-        self.dateRange = dateRange
+def splitDate(startDate, dateRange, splitPieces):
+    assert isinstance(startDate, datetime)
+    assert isinstance(dateRange, timedelta)
+    assert isinstance(splitPieces, int)
+    splitRange = dateRange / splitPieces
 
-    def convertData(self, windowLength):
-        return convertData(self.allData, self.startDate, self.dateRange, windowLength)
+    END_DATE = startDate + dateRange
+
+    HOUR = 3_600
+
+    if not splitRange.total_seconds() % HOUR == 0:
+        totalSeconds = splitRange.total_seconds()
+        remainderSeconds = splitRange.total_seconds() % HOUR
+        # print("TOTAL", totalSeconds)
+        # print("REMAINDER", remainderSeconds)
+        # print("ADDING", HOUR)
+        splitRange = timedelta(seconds=(totalSeconds - remainderSeconds) + HOUR)
+
+    assert (splitRange.seconds % 3600) == 0, "was {} instead".format(splitRange.seconds)
+    datePieces = []
+    currentDate = startDate
+    while currentDate < END_DATE:
+        datePiece = [currentDate, splitRange]
+        datePieces.append(datePiece)
+        currentDate += splitRange
+    
+    last = datePieces[-1]
+    last[1] = END_DATE - last[0]
+    datePieces[-1] = last
+    return datePieces
+
+
+def convertDataMultiProcess(allData, startDate, dateRange, windowLength, coreCount=20):
+    result = convertData(allData, startDate, dateRange, windowLength)
+    # jobs = splitDate(startDate, dateRange, coreCount)
+    # results = []
+    # for date, length in jobs:
+    #     result = convertData(allData, date, length, windowLength)
+    #     results.extend(result)
+    #     # print(date, length, result)
+
+
+    return result

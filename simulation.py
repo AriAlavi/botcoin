@@ -103,22 +103,23 @@ def getData(filename, startDate, endDate, shortTermWindow, longTermWindow):
 
     filePath = os.path.join(cacheDataFolderPath, uniqueHash)
 
-    if os.path.isfile(filePath):
-        file = open(filePath, "rb")
-        print("{} loaded from cache".format(uniqueHash))
-        data = pickle.load(file)
-        file.close()
-        return data
+    # if os.path.isfile(filePath):
+    #     file = open(filePath, "rb")
+    #     print("{} loaded from cache".format(uniqueHash))
+    #     data = pickle.load(file)
+    #     file.close()
+    #     return data
     
     botcoin = RawData(filename)
     dateRange = endDate-startDate
     allData = botcoin.fetchData(startDate, dateRange)
     print("All data between {} and {} has been fetched.".format(startDate, endDate))
+    shortTerm = convertDataMultiProcess(allData, startDate, dateRange, shortTermWindow)
+    longTerm = convertDataMultiProcess(allData, startDate, dateRange, longTermWindow)
 
-
-    convertDataThread = ConvertDataMultiProcess(allData, startDate, dateRange)
-    p = multiprocessing.Pool(2)
-    shortTerm, longTerm = p.map(convertDataThread.convertData, [shortTermWindow, longTermWindow])
+    print("GOT TOTAL", len(shortTerm))
+    for x in shortTerm:
+        print(x, x.transactions)
 
     data = {
         "short" : shortTerm,
