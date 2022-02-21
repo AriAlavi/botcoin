@@ -27,7 +27,9 @@ class HypothesisTesterStupid:
         assert callable(hypothesis)
         return simulation(self.startingDate, self.shortTermWindow, self.endingDate, self.shortTermData, self.longTermData, hypothesis, self.startingCash)["success"]
 
-def DataFrame(data):
+def DataFrame(data, filename):
+    assert isinstance(filename, str)
+    assert ".xlsx" in filename
     
     short = pd.DataFrame([val.__dict__ for val in data['short']]).dropna()
     long = pd.DataFrame([val.__dict__ for val in data['long']]).dropna()
@@ -97,13 +99,32 @@ def DataFrame(data):
     
     
     
-    with pd.ExcelWriter('dataframeETHUSD.xlsx') as writer:  
+    with pd.ExcelWriter(filename) as writer:  
         short.to_excel(writer, sheet_name='short')
         long.to_excel(writer, sheet_name='long')
 
 
     return short,long
 
+
+
+def convertDataListMode(convertMe):
+    assert isinstance(convertMe, list)
+
+    startingDate = datetime(year=2018, month=1, day=2, hour=0, minute=0, second=0)
+    endingDate = datetime(year=2020, month=12, day=31)
+    shortTermWindow = timedelta(hours=1)
+    longTermWindow = timedelta(hours=24)
+    for filename in convertMe:
+        try:
+            file = open(filename) # Check to see if exists and openable
+            file.close()
+        except:
+            raise Exception(f"{convertMe} file not found!")
+    for filename in convertMe:
+        data = getData(filename, startingDate, endingDate, shortTermWindow, longTermWindow)
+        excelName = filename.replace(".csv", ".xlsx")
+        DataFrame(data, excelName)
 
 
 def main():

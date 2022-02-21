@@ -86,7 +86,7 @@ def convertData(rawData,givenDate,dateRange,givenWindow):
     assert isinstance(givenDate, datetime)
     assert isinstance(dateRange,timedelta)
     assert isinstance(givenWindow,timedelta)
-    print(givenDate, dateRange)
+    # print(givenDate, dateRange)
     endDate = givenDate + dateRange
 
     currentDate = givenDate
