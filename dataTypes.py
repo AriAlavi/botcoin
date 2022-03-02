@@ -93,7 +93,7 @@ def convertData(rawData,givenDate,dateRange,givenWindow):
     createdDiscreteData = []
     rawDataIndex = 0
     startDateInt = int(givenDate.timestamp())
-    while currentDate < endDate:
+    while (currentDate < endDate) and (rawDataIndex < len(rawData)):
         currentDateInt = int(currentDate.timestamp())
         currentWindowRawData = []
         currentData = rawData[rawDataIndex]
@@ -101,9 +101,9 @@ def convertData(rawData,givenDate,dateRange,givenWindow):
             # print(currentData.time, startDateInt, currentData.time > startDateInt)
             # if currentData.time >= startDateInt:
             currentWindowRawData.append(currentData)
-
             rawDataIndex += 1
             currentData = rawData[rawDataIndex]
+
 
         createdObj = DiscreteData(currentWindowRawData, currentDate, givenWindow)
         createdDiscreteData.append(createdObj)
