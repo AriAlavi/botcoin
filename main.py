@@ -11,7 +11,8 @@ from dataTypes import *
 from simulation import *
 import hypothesis
 
-
+import pandas as pd
+import numpy as np
 
 
 class HypothesisTesterStupid:
