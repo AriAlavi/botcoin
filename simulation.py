@@ -100,12 +100,12 @@ def getData(filename, startDate, endDate, shortTermWindow, longTermWindow):
 
     filePath = os.path.join(cacheDataFolderPath, uniqueHash)
 
-    # if os.path.isfile(filePath):
-    #     file = open(filePath, "rb")
-    #     print("{} loaded from cache".format(uniqueHash))
-    #     data = pickle.load(file)
-    #     file.close()
-    #     return data
+    if os.path.isfile(filePath):
+        file = open(filePath, "rb")
+        print("{} loaded from cache".format(uniqueHash))
+        data = pickle.load(file)
+        file.close()
+        return data
     
     botcoin = RawData(filename)
     dateRange = endDate-startDate

@@ -126,30 +126,47 @@ def convertDataListMode(convertMe):
         excelName = filename.replace(".csv", ".xlsx")
         DataFrame(data, excelName)
 
+def csvWriter(dataFilename, parameterName, listData):
+    assert isinstance(dataFilename, str)
+    assert isinstance(parameterName, str)
+    assert isinstance(listData, list)
+
+    dataFilename = dataFilename.replace(".csv", "").replace(".CSV", "")
+    writingFilename = f"{dataFilename}_{parameterName}.csv"
+    
+    file = open(writingFilename, "w")
+    writer = csv.writer(file)
+
+    listRealData = [x for x in listData if x != None]
+    writer.writerows(listRealData)
+    file.close()
+
 def main():
     THREAD_COUNT = os.cpu_count()
     print("I have {} cores".format(THREAD_COUNT))
-    FILENAME = "XMRUSD.csv"
+    FILENAME = "ETHUSD.csv"
     # print(hypothesisTester(FILENAME, hypothesis.equationMethod))
     
 
     startingDate = datetime(year=2018, month=1, day=2, hour=0, minute=0, second=0)
-    endingDate = datetime(year=2020, month=12, day=31)
+    endingDate = datetime(year=2018, month=12, day=31)
     shortTermWindow = timedelta(hours=1)
     longTermWindow = timedelta(hours=24)
 
     # import time
     # start = time.time()
     data = getData(FILENAME, startingDate, endingDate, shortTermWindow, longTermWindow)
-    shortdf,longdf = DataFrame(data)
+    # shortdf,longdf = DataFrame(data)
     # print("Took {} seconds".format(time.time() - start))
     # for x in longTerm:
     #     print("L RANGE:", x.date, " - ", x.endDate)
     # # for x in shortTerm:
     # #     print("S RANGE:", x.date, " - ", x.endDate)
+    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.dataWriter, Decimal(1_000))
 
-    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.hold, Decimal(1_000))
-   
+    csvParameters = [x for x in result["chartingParameters"] if "csv" in x.lower()]
+    [csvWriter(FILENAME, x, result["chartingParameters"].pop(x)) for x in csvParameters]
+
     def ParameterPrint():
         return "{:.3f}% success\n{:.3f}% market risk\n{} Buys\n{} Sells"\
             .format(result["success"],result["marketRisk"],result["numberOfBuys"],result["numberOfSells"])
