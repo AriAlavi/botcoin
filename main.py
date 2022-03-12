@@ -126,7 +126,6 @@ def convertDataListMode(convertMe):
         excelName = filename.replace(".csv", ".xlsx")
         DataFrame(data, excelName)
 
-
 def main():
     THREAD_COUNT = os.cpu_count()
     print("I have {} cores".format(THREAD_COUNT))
@@ -149,9 +148,19 @@ def main():
     # # for x in shortTerm:
     # #     print("S RANGE:", x.date, " - ", x.endDate)
 
-    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.equationMethod, Decimal(1_000))
-    # print("{}% success".format(result["success"]))    
-    simulationPlotter(data["long"], result)
+    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.hold, Decimal(1_000))
+   
+    def ParameterPrint():
+        return "{:.3f}% success\n{:.3f}% market risk\n{} Buys\n{} Sells"\
+            .format(result["success"],result["marketRisk"],result["numberOfBuys"],result["numberOfSells"])
+
+    print(ParameterPrint())
+    
+
+       
+
+    
+    # simulationPlotter(data["long"], result)
     # print(hypothesisTester(FILENAME, hypothesis.hold))
 
     # hypothesisTester = HypothesisTester(startingDate, shortTermWindow, endingDate, data["short"], data["long"], Decimal(1_000)).testHypothesis
@@ -175,4 +184,3 @@ def main():
 if __name__ == "__main__":
     main()
     
-
