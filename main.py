@@ -31,8 +31,8 @@ def DataFrame(data, filename):
     assert isinstance(filename, str)
     assert ".xlsx" in filename
     
-    short = pd.DataFrame([val.__dict__ for val in data['short']]).dropna()
-    long = pd.DataFrame([val.__dict__ for val in data['long']]).dropna()
+    short = pd.DataFrame([val.__dict__ for val in data['short']])
+    long = pd.DataFrame([val.__dict__ for val in data['long']])
     #plt.plot_date(short.date,short.safeMeanPrice, linestyle='solid', marker='')
         
     #check for linearity with scatter plots
@@ -130,19 +130,19 @@ def convertDataListMode(convertMe):
 def main():
     THREAD_COUNT = os.cpu_count()
     print("I have {} cores".format(THREAD_COUNT))
-    FILENAME = "XMRUSD.csv"
+    FILENAME = "ETHUSD.csv"
     # print(hypothesisTester(FILENAME, hypothesis.equationMethod))
     
 
-    startingDate = datetime(year=2018, month=1, day=2, hour=0, minute=0, second=0)
-    endingDate = datetime(year=2020, month=12, day=31)
+    startingDate = datetime(year=2017, month=1, day=1)
+    endingDate = datetime(year=2021, month=6, day=30, hour = 15, minute = 0)
     shortTermWindow = timedelta(hours=1)
     longTermWindow = timedelta(hours=24)
 
     # import time
     # start = time.time()
     data = getData(FILENAME, startingDate, endingDate, shortTermWindow, longTermWindow)
-    shortdf,longdf = DataFrame(data)
+    shortdf,longdf = DataFrame(data, "fixednasentimentrangeeth.xlsx")
     # print("Took {} seconds".format(time.time() - start))
     # for x in longTerm:
     #     print("L RANGE:", x.date, " - ", x.endDate)
