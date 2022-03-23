@@ -126,6 +126,20 @@ def convertDataListMode(convertMe):
         excelName = filename.replace(".csv", ".xlsx")
         DataFrame(data, excelName)
 
+def csvWriter(dataFilename, parameterName, listData):
+    assert isinstance(dataFilename, str)
+    assert isinstance(parameterName, str)
+    assert isinstance(listData, list)
+
+    dataFilename = dataFilename.replace(".csv", "").replace(".CSV", "")
+    writingFilename = f"{dataFilename}_{parameterName}.csv"
+    
+    file = open(writingFilename, "w")
+    writer = csv.writer(file)
+
+    listRealData = [x for x in listData if x != None]
+    writer.writerows(listRealData)
+    file.close()
 
 def main():
     THREAD_COUNT = os.cpu_count()
@@ -134,8 +148,9 @@ def main():
     # print(hypothesisTester(FILENAME, hypothesis.equationMethod))
     
 
-    startingDate = datetime(year=2017, month=1, day=1)
-    endingDate = datetime(year=2021, month=6, day=30, hour = 15, minute = 0)
+
+    startingDate = datetime(year=2018, month=1, day=2, hour=0, minute=0, second=0)
+    endingDate = datetime(year=2018, month=12, day=31)
     shortTermWindow = timedelta(hours=1)
     longTermWindow = timedelta(hours=24)
 
@@ -148,10 +163,22 @@ def main():
     #     print("L RANGE:", x.date, " - ", x.endDate)
     # # for x in shortTerm:
     # #     print("S RANGE:", x.date, " - ", x.endDate)
+    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.dataWriter, Decimal(1_000))
 
-    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.equationMethod, Decimal(1_000))
-    # print("{}% success".format(result["success"]))    
-    simulationPlotter(data["long"], result)
+    csvParameters = [x for x in result["chartingParameters"] if "csv" in x.lower()]
+    [csvWriter(FILENAME, x, result["chartingParameters"].pop(x)) for x in csvParameters]
+
+    def ParameterPrint():
+        return "{:.3f}% success\n{:.3f}% market risk\n{} Buys\n{} Sells"\
+            .format(result["success"],result["marketRisk"],result["numberOfBuys"],result["numberOfSells"])
+
+    print(ParameterPrint())
+    
+
+       
+
+    
+    # simulationPlotter(data["long"], result)
     # print(hypothesisTester(FILENAME, hypothesis.hold))
 
     # hypothesisTester = HypothesisTester(startingDate, shortTermWindow, endingDate, data["short"], data["long"], Decimal(1_000)).testHypothesis
@@ -175,4 +202,3 @@ def main():
 if __name__ == "__main__":
     main()
     
-
