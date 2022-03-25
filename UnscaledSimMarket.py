@@ -116,7 +116,7 @@ class UnscaledSimMarket(gym.Env):
         self.price = self.state[0]
         self.failState = False
         action = action[0]
-            #return np.append(self.data.to_numpy()[self.row-1],(self.acctvalue, self.coins, self.cash)), self.acctvalue, True
+        #return np.append(self.data.to_numpy()[self.row-1],(self.acctvalue, self.coins, self.cash)), self.acctvalue, True
         #update market on each step
         
         #NN action is discrete, 0->20, so we have to convert
