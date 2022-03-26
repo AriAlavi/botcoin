@@ -133,3 +133,7 @@ dmypy.json
 # Custom defintions
 *.csv
 .~lock.discretedata.xlsx#
+*.v2
+*.0
+!hourlysentiment.csv
+
