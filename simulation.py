@@ -5,7 +5,10 @@ from dataTypes import *
 
 import os, pickle, pathlib, csv, multiprocessing
 
-
+import numpy as np
+import matplotlib.pyplot as plt
+import mplfinance as mpf
+import pandas as pd
 
 class RawData:
     def __init__(self, filename):
@@ -100,12 +103,12 @@ def getData(filename, startDate, endDate, shortTermWindow, longTermWindow):
 
     filePath = os.path.join(cacheDataFolderPath, uniqueHash)
 
-    if os.path.isfile(filePath):
-        file = open(filePath, "rb")
-        print("{} loaded from cache".format(uniqueHash))
-        data = pickle.load(file)
-        file.close()
-        return data
+    # if os.path.isfile(filePath):
+    #     file = open(filePath, "rb")
+    #     print("{} loaded from cache".format(uniqueHash))
+    #     data = pickle.load(file)
+    #     file.close()
+    #     return data
     
     botcoin = RawData(filename)
     dateRange = endDate-startDate
@@ -126,8 +129,8 @@ def getData(filename, startDate, endDate, shortTermWindow, longTermWindow):
     pickle.dump(data, file)
     file.close()
     return data
-
-def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData, hypothesisFunc, startingCash):
+#add 2 more at the end: hlist, dlist
+def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData, hypothesisFunc, startingCash, hlist, dlist):
     assert isinstance(startingDate, datetime) # Should be the exact same starting date as the short term and long term data
     assert isinstance(timeSteps, timedelta) # Should be the exact same as the time window for the short term data
     assert isinstance(endingDate, datetime) # Should be the exact same as the starting date + window length for the fetched data
@@ -141,6 +144,8 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
     assert isinstance(startingCash, Decimal)
     
     assert startingDate < endingDate
+    dlist_track = 1
+    hlist_track = 1
 
     CASH = startingCash
     BOTCOINS = Decimal(0)
@@ -179,7 +184,10 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
         else:
             print("It is {} and the index is {} and the date of that index is {}. This shouldn't be possible, but I'm going to pretend like nothing has gone wrong.".format(now, shortTermIndex, shortTermData[shortTermIndex].date))
 
-        
+        while now >= dlist[dlist_track][0]:
+            dlist_track += 1
+        while now >= hlist[hlist_track][0]:
+            hlist_track += 1
         currentShortTerm = shortTermData[shortTermIndex] 
         currentLongTerm = longtermData[longTermIndex]
 
@@ -200,7 +208,7 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
                     breaking = True
 
         chartingParameters = {}
-        soughtLeverage = hypothesisFunc(currentShortTerm, currentLongTerm, CASH, BOTCOINS, customParameters, chartingParameters)
+        soughtLeverage = hypothesisFunc(currentShortTerm, currentLongTerm, CASH, BOTCOINS, customParameters, chartingParameters, hlist[hlist_track-1][1],  dlist[dlist_track-1][1])
         if len(chartingParameters.keys()) > 0:
             if len(CHARTING_PARAMETERS_HISTORY.keys()) == 0:
                 for key, value in chartingParameters.items():
@@ -276,9 +284,6 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
     }
        
 def simulationPlotter(longTermData, simulationData):
-    import matplotlib.pyplot as plt
-    import mplfinance as mpf
-    import pandas as pd
     assert isinstance(simulationData, dict)
     valueHistory = simulationData["valueHistory"]
     leverageHistory = simulationData["leverageHistory"]
@@ -438,4 +443,7 @@ class HypothesisTester:
         self.hypothesis = hypothesis
     def run(self):
         return simulation(self.startingDate, self.timeSteps, self.endingDate, self.shortTermData, self.longtermData, self.hypothesis, self.startingCash).get('success')
-    
+
+
+
+# simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData, hypothesisFunc, startingCash)

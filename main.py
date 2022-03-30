@@ -11,9 +11,10 @@ from dataTypes import *
 from simulation import *
 import hypothesis
 
+#   ********* Saba *********
 import pandas as pd
 import numpy as np
-
+#   ********* Saba *********
 
 class HypothesisTesterStupid:
     def __init__(self, startingDate, shortTermWindow, endingDate, shortTermData, longTermData, startingCash):
@@ -32,8 +33,8 @@ def DataFrame(data, filename):
     assert isinstance(filename, str)
     assert ".xlsx" in filename
     
-    short = pd.DataFrame([val.__dict__ for val in data['short']])
-    long = pd.DataFrame([val.__dict__ for val in data['long']])
+    short = pd.DataFrame([val.__dict__ for val in data['short']]).dropna()
+    long = pd.DataFrame([val.__dict__ for val in data['long']]).dropna()
     #plt.plot_date(short.date,short.safeMeanPrice, linestyle='solid', marker='')
         
     #check for linearity with scatter plots
@@ -127,48 +128,44 @@ def convertDataListMode(convertMe):
         excelName = filename.replace(".csv", ".xlsx")
         DataFrame(data, excelName)
 
-def csvWriter(dataFilename, parameterName, listData):
-    assert isinstance(dataFilename, str)
-    assert isinstance(parameterName, str)
-    assert isinstance(listData, list)
-
-    dataFilename = dataFilename.replace(".csv", "").replace(".CSV", "")
-    writingFilename = f"{dataFilename}_{parameterName}.csv"
-    
-    file = open(writingFilename, "w")
-    writer = csv.writer(file)
-
-    listRealData = [x for x in listData if x != None]
-    writer.writerows(listRealData)
-    file.close()
-
 def main():
+    with open('DAILY.csv', newline='') as f:
+        reader = csv.reader(f)
+        dlist = list(reader)
+        format_d = r'%Y-%m-%d %H:%M:%S'
+        for x in range(1, len(dlist)):
+            dlist[x][0] = datetime.strptime(dlist[x][0], format_d)
+            dlist[x][1] = Decimal(dlist[x][1])
+    with open('hourlyfixed.csv', newline='') as f:
+        reader = csv.reader(f)
+        hlist = list(reader)
+        format_h = r'%Y-%m-%d %H:%M:%S'
+        for x in range(1, len(hlist)):
+            hlist[x][0] = datetime.strptime(hlist[x][0], format_h)
+            hlist[x][1] = Decimal(hlist[x][1])
     THREAD_COUNT = os.cpu_count()
     print("I have {} cores".format(THREAD_COUNT))
-    FILENAME = "ETHUSD.csv"
+    FILENAME = "XMRUSD.csv"
     # print(hypothesisTester(FILENAME, hypothesis.equationMethod))
     
 
-
     startingDate = datetime(year=2018, month=1, day=2, hour=0, minute=0, second=0)
-    endingDate = datetime(year=2018, month=12, day=31)
+    endingDate = datetime(year=2020, month=12, day=31)
     shortTermWindow = timedelta(hours=1)
     longTermWindow = timedelta(hours=24)
 
     # import time
     # start = time.time()
     data = getData(FILENAME, startingDate, endingDate, shortTermWindow, longTermWindow)
-    shortdf,longdf = DataFrame(data, "fixednasentimentrangeeth.xlsx")
+    # shortdf,longdf = DataFrame(data)
     # print("Took {} seconds".format(time.time() - start))
     # for x in longTerm:
     #     print("L RANGE:", x.date, " - ", x.endDate)
     # # for x in shortTerm:
     # #     print("S RANGE:", x.date, " - ", x.endDate)
-    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.dataWriter, Decimal(1_000))
-
-    csvParameters = [x for x in result["chartingParameters"] if "csv" in x.lower()]
-    [csvWriter(FILENAME, x, result["chartingParameters"].pop(x)) for x in csvParameters]
-
+    #add hlist, dlist at end
+    result = simulation(startingDate, shortTermWindow, endingDate, data["short"], data["long"], hypothesis.testing, Decimal(1_000), hlist,dlist)
+   
     def ParameterPrint():
         return "{:.3f}% success\n{:.3f}% market risk\n{} Buys\n{} Sells"\
             .format(result["success"],result["marketRisk"],result["numberOfBuys"],result["numberOfSells"])
@@ -179,7 +176,7 @@ def main():
        
 
     
-    # simulationPlotter(data["long"], result)
+    simulationPlotter(data["long"], result)
     # print(hypothesisTester(FILENAME, hypothesis.hold))
 
     # hypothesisTester = HypothesisTester(startingDate, shortTermWindow, endingDate, data["short"], data["long"], Decimal(1_000)).testHypothesis

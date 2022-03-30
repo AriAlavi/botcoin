@@ -1,37 +1,8 @@
-from dis import dis
 from dataTypes import *
 from decimal import Decimal
 from math import sin, cos, sqrt
 from scipy.stats import linregress
 import numpy as np
-
-def dataWriter(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters):
-    assert isinstance(shortTerm, DiscreteData)
-    assert isinstance(longTerm, DiscreteData)
-    assert isinstance(cash, Decimal)
-    assert isinstance(botcoins, Decimal)
-    assert isinstance(customParameters, dict)
-    assert isinstance(chartingParameters, dict)
-
-    if len(customParameters.keys()) == 0:
-        customParameters["lastLongTerm"] = None
-        chartingParameters["shortTermCSV"] = ["Date", "End Date", "Price", "Volume", "Low", "High", "Open", "Close", "Transactions"]
-        chartingParameters["longTermCSV"] = ["Date", "End Date", "Price", "Volume", "Low", "High", "Open", "Close", "Transactions"]
-        return Decimal(0)
-
-    def toCSV(discreteData):
-        assert isinstance(discreteData, DiscreteData)
-        return [
-            discreteData.date.strftime("%Y-%m-%d %H:%M%S"), discreteData.endDate.strftime("%Y-%m-%d %H:%M%S"), discreteData.price, discreteData.volume, discreteData.low, discreteData.high, discreteData.open, discreteData.close, discreteData.transactions
-        ]
-
-    chartingParameters["shortTermCSV"] = toCSV(shortTerm)
-    if customParameters["lastLongTerm"] == None or customParameters["lastLongTerm"].date != longTerm.date:
-        chartingParameters["longTermCSV"] = toCSV(longTerm)
-        customParameters["lastLongTerm"] = longTerm
-    else:
-        chartingParameters["longTermCSV"] = None
-    return Decimal(0)
 
 def randomChoice(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters):
     assert isinstance(shortTerm, DiscreteData)
@@ -61,7 +32,9 @@ def bounce(shortTerm, longTerm, cash, botcoins, customParameters, chartingParame
 
 def hold(*args):
     return Decimal(1)
-
+def testing(shortTerm, longTerm, cash, botcoins, customParameters, chartingParameters, hlist, dlist, **kwargs):
+    chartingParameters["test"] = float(dlist)
+    return Decimal(.5)
 
 def mse(a, b):
     return np.sqrt(np.sum((np.array([x-y for x, y in zip(a, b)]))**2))
