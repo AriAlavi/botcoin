@@ -5,10 +5,7 @@ from dataTypes import *
 
 import os, pickle, pathlib, csv, multiprocessing
 
-import numpy as np
-import matplotlib.pyplot as plt
-import mplfinance as mpf
-import pandas as pd
+
 
 class RawData:
     def __init__(self, filename):
@@ -103,12 +100,12 @@ def getData(filename, startDate, endDate, shortTermWindow, longTermWindow):
 
     filePath = os.path.join(cacheDataFolderPath, uniqueHash)
 
-    # if os.path.isfile(filePath):
-    #     file = open(filePath, "rb")
-    #     print("{} loaded from cache".format(uniqueHash))
-    #     data = pickle.load(file)
-    #     file.close()
-    #     return data
+    if os.path.isfile(filePath):
+        file = open(filePath, "rb")
+        print("{} loaded from cache".format(uniqueHash))
+        data = pickle.load(file)
+        file.close()
+        return data
     
     botcoin = RawData(filename)
     dateRange = endDate-startDate
@@ -279,6 +276,9 @@ def simulation(startingDate, timeSteps, endingDate, shortTermData, longtermData,
     }
        
 def simulationPlotter(longTermData, simulationData):
+    import matplotlib.pyplot as plt
+    import mplfinance as mpf
+    import pandas as pd
     assert isinstance(simulationData, dict)
     valueHistory = simulationData["valueHistory"]
     leverageHistory = simulationData["leverageHistory"]
