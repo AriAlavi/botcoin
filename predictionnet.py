@@ -162,18 +162,18 @@ tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram
 
 model = Sequential()
 model.add(LSTM(128, activation='tanh', recurrent_activation = 'sigmoid', recurrent_dropout= 0, unroll=False, use_bias = True, input_shape=(xtrain.shape[1],xtrain.shape[2]), return_sequences=True))
-model.add(Dropout(0.2))
+model.add(Dropout(0.2, seed=42))
 model.add(LSTM(128, activation='tanh', recurrent_activation = 'sigmoid', recurrent_dropout= 0, unroll=False, use_bias = True, return_sequences=True))
-model.add(Dropout(0.2))
+model.add(Dropout(0.2, seed=42))
 model.add(LSTM(128, activation='tanh', recurrent_activation = 'sigmoid', recurrent_dropout= 0, unroll=False, use_bias = True))
-model.add(Dropout(0.2))
+model.add(Dropout(0.2, seed=42))
 model.add(Dense(ytrain.shape[1]))
 # model.add(Dense(predahead))
 #VERY GOOD LEARNING RATE AT 0.00001 200 epochs in, 36 back 12 ahead, 0.002 loss quickly
 #0.0015 60 epochs in, 36 back 36 ahead, very close loss/val at 200 epochs
 model.compile(loss='mean_squared_error', optimizer=tf.optimizers.Adam(learning_rate=0.0001))
-history = model.fit(xtrain, ytrain, validation_data=[xtest,ytest], callbacks=[tensorboard_callback], epochs=750, batch_size=256)
-#model.save('100epoch256b-lr0.00001hourly7ahead' + name)
+history = model.fit(xtrain, ytrain, validation_data=[xtest,ytest], callbacks=[tensorboard_callback], epochs=500, batch_size=256)
+model.save('finalmaybe' + name)
 
 
 #this line above is where the model is trained and saved
@@ -219,7 +219,7 @@ testpricedf.drop(testpricedf.tail(predahead+1).index,inplace=True) # must remove
 testdf = testdf.divide(testpricedf['price'], axis=0) -1
 testdf.insert(loc = 0, column = 'price', value = testpricedf['price'])
 
-pd.DataFrame(testdf).to_excel("1hourly36hahead36hback60percenttest.xlsx") 
+pd.DataFrame(testdf).to_excel("1hourly36hahead36hback60percenttestmse.xlsx") 
 
 # wholedf = pd.DataFrame(wholevalues)
 # pricedf = pd.DataFrame(dataframe['price']).reset_index()
