@@ -137,3 +137,15 @@ dmypy.json
 *.0
 !hourlysentiment.csv
 
+*.zip
+*.png
+*.gif
+*.avi
+*.pkl
+*.6
+
+checkpoints/
+predmodels/
+tblogging/
+pickles/
+rlmodels/
